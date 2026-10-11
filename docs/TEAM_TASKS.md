@@ -10,16 +10,16 @@
 
 | Task ID | Role Name | Task Title | Dependencies | Status | PR Branch |
 |---|---|---|---|---|---|
-| **TASK-PO-01** | Product Owner / Team Lead | Repository Foundation, Architecture Baseline & Core Scaffold | None | **READY FOR REVIEW** | `feature/TASK-PO-01-repo-foundation` |
-| **TASK-GIT-01** | Git/GitHub Engineer | GitFlow Conventions, PR Guidelines & Branch Protection Docs | TASK-PO-01 | **BLOCKED** | `feature/TASK-GIT-01-gitflow-standards` |
-| **TASK-DEV1-01** | Developer 1 | Auth.js Setup, Role-Based Navigation & Session Shell | TASK-PO-01 | **BLOCKED** | `feature/TASK-DEV1-01-auth-navigation` |
-| **TASK-DEV2-01** | Developer 2 | Patient Registration, Search & Patient Profiles | TASK-PO-01 | **BLOCKED** | `feature/TASK-DEV2-01-patient-management` |
+| **TASK-PO-01** | Product Owner / Team Lead | Repository Foundation, Architecture Baseline & Core Scaffold | None | **COMPLETE AFTER MERGE** | `main` / `develop` |
+| **TASK-GIT-01** | Git/GitHub Engineer | GitFlow Conventions, PR Guidelines & Branch Protection Docs | TASK-PO-01 | **READY TO START** | `feature/TASK-GIT-01-gitflow-standards` |
+| **TASK-DEV1-01** | Developer 1 | Auth.js Setup, Role-Based Navigation & Session Shell | TASK-PO-01 | **READY FOR REVIEW** | `feature/TASK-DEV1-01-auth-navigation` |
+| **TASK-DEV2-01** | Developer 2 | Patient Registration, Search & Patient Profiles | TASK-PO-01 | **READY TO START** | `feature/TASK-DEV2-01-patient-management` |
 | **TASK-DEV3-01** | Developer 3 | Appointment Scheduling, Consultations & Prescriptions | TASK-PO-01, TASK-DEV2-01 (API contract) | **BLOCKED** | `feature/TASK-DEV3-01-appointments-clinical` |
-| **TASK-QA-01** | QA Engineer | Test Strategy, Vitest Suite Scaffolding & E2E Test Suite | TASK-PO-01 | **BLOCKED** | `feature/TASK-QA-01-test-suite` |
-| **TASK-CI-01** | Jenkins Engineer | Declarative Jenkinsfile Pipeline (Lint, Typecheck, Test, Build) | TASK-PO-01 | **BLOCKED** | `feature/TASK-CI-01-jenkins-pipeline` |
-| **TASK-DOCKER-01** | Docker Engineer | Multi-Stage Dockerfile & Container Build Optimization | TASK-PO-01 | **BLOCKED** | `feature/TASK-DOCKER-01-dockerfile` |
+| **TASK-QA-01** | QA Engineer | Test Strategy, Vitest Suite Scaffolding & E2E Test Suite | TASK-PO-01 | **READY TO START** | `feature/TASK-QA-01-test-suite` |
+| **TASK-CI-01** | Jenkins Engineer | Declarative Jenkinsfile Pipeline (Lint, Typecheck, Test, Build) | TASK-PO-01 | **READY TO START** | `feature/TASK-CI-01-jenkins-pipeline` |
+| **TASK-DOCKER-01** | Docker Engineer | Multi-Stage Dockerfile & Container Build Optimization | TASK-PO-01 | **READY TO START** | `feature/TASK-DOCKER-01-dockerfile` |
 | **TASK-K8S-01** | Kubernetes Engineer | Kubernetes Deployment, Service, ConfigMap & Probe Manifests | TASK-DOCKER-01 | **BLOCKED** | `feature/TASK-K8S-01-k8s-manifests` |
-| **TASK-SRE-01** | DevOps/SRE Engineer | Observability, Health Endpoints, Telemetry & SRE Runbooks | TASK-PO-01 | **BLOCKED** | `feature/TASK-SRE-01-health-observability` |
+| **TASK-SRE-01** | DevOps/SRE Engineer | Observability, Health Endpoints, Telemetry & SRE Runbooks | TASK-PO-01 | **READY TO START** | `feature/TASK-SRE-01-health-observability` |
 
 ---
 
@@ -37,7 +37,7 @@
   - Clean Next.js scaffold running in strict TypeScript mode.
   - Zero lint, type-check, build, or test failures.
   - All 11 team documentation files populated and aligned with no conflicting rules.
-- **Current Status**: READY FOR REVIEW
+- **Current Status**: COMPLETE AFTER MERGE
 
 ---
 
@@ -46,7 +46,7 @@
 - **Scope**: Establish Git collaboration guidelines, branching policy, commit message conventions, and merge conflict resolution protocols.
 - **Files Owned**: `docs/GIT_WORKFLOW.md`, `.github/pull_request_template.md`, `.github/workflows/*` (if applicable).
 - **Dependencies**: TASK-PO-01 merged into `develop`.
-- **Status**: BLOCKED (Awaiting TASK-PO-01)
+- **Status**: READY TO START
 
 ---
 
@@ -55,7 +55,7 @@
 - **Scope**: Implement authentication credentials provider, JWT session handling, role-aware navigation bar, and user profile drawer.
 - **Files Owned**: `src/lib/auth/*`, `src/models/User.ts`, `src/features/auth/*`, `src/app/(auth)/*`, `src/components/shared/nav.tsx`.
 - **Dependencies**: TASK-PO-01 merged into `develop`.
-- **Status**: BLOCKED (Awaiting TASK-PO-01)
+- **Status**: IN PROGRESS
 
 ---
 

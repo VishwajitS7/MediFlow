@@ -19,16 +19,16 @@
 
 | Feature / Task | Owner Role | Status | PR / Branch | Notes |
 |---|---|---|---|---|
-| **TASK-PO-01** | Product Owner / Team Lead | **READY FOR REVIEW** | `feature/TASK-PO-01-repo-foundation` | Baseline Next.js scaffold, documentation suite, shared utilities, and verification scripts completed. |
-| **TASK-GIT-01** | Git/GitHub Engineer | **BLOCKED** | - | Awaiting TASK-PO-01 merge into `develop`. |
-| **TASK-DEV1-01** | Developer 1 | **BLOCKED** | - | Awaiting TASK-PO-01 merge into `develop`. |
-| **TASK-DEV2-01** | Developer 2 | **BLOCKED** | - | Awaiting TASK-PO-01 merge into `develop`. |
-| **TASK-DEV3-01** | Developer 3 | **BLOCKED** | - | Awaiting TASK-PO-01 merge into `develop`. |
-| **TASK-QA-01** | QA Engineer | **BLOCKED** | - | Awaiting TASK-PO-01 merge into `develop`. |
-| **TASK-CI-01** | Jenkins Engineer | **BLOCKED** | - | Awaiting TASK-PO-01 merge into `develop`. |
-| **TASK-DOCKER-01** | Docker Engineer | **BLOCKED** | - | Awaiting TASK-PO-01 merge into `develop`. |
+| **TASK-PO-01** | Product Owner / Team Lead | **MERGED** | `develop` | Baseline Next.js scaffold, documentation suite, shared utilities, and verification scripts merged. |
+| **TASK-GIT-01** | Git/GitHub Engineer | **READY TO START** | `feature/TASK-GIT-01-gitflow-standards` | Unblocked. |
+| **TASK-DEV1-01** | Developer 1 | **READY FOR REVIEW** | `feature/TASK-DEV1-01-auth-navigation` | NextAuth credentials provider, User model, Zod validation, Register/Me APIs, RBAC guards, Login/Register UI, and tests complete. |
+| **TASK-DEV2-01** | Developer 2 | **READY TO START** | `feature/TASK-DEV2-01-patient-management` | Unblocked. |
+| **TASK-DEV3-01** | Developer 3 | **BLOCKED** | - | Awaiting TASK-DEV2-01 interface stability. |
+| **TASK-QA-01** | QA Engineer | **READY TO START** | `feature/TASK-QA-01-test-suite` | Unblocked. |
+| **TASK-CI-01** | Jenkins Engineer | **READY TO START** | `feature/TASK-CI-01-jenkins-pipeline` | Unblocked. |
+| **TASK-DOCKER-01** | Docker Engineer | **READY TO START** | `feature/TASK-DOCKER-01-dockerfile` | Unblocked. |
 | **TASK-K8S-01** | Kubernetes Engineer | **BLOCKED** | - | Awaiting TASK-DOCKER-01 container image. |
-| **TASK-SRE-01** | DevOps/SRE Engineer | **BLOCKED** | - | Awaiting TASK-PO-01 merge into `develop`. |
+| **TASK-SRE-01** | DevOps/SRE Engineer | **READY TO START** | `feature/TASK-SRE-01-health-observability` | Unblocked. |
 
 ---
 
