@@ -16,7 +16,7 @@ MediFlow is developed by a coordinated 10-member DevOps engineering team. Below 
 | **TASK-DEV2-01** | **Developer 2** | **Patient Registration, Patient Directory, Search & Profiles** | **READY TO START (NEXT)** | `feature/TASK-DEV2-01-patient-management` |
 | **TASK-DEV3-01** | Developer 3 | Appointment Scheduling, Clinical Consultations & Prescriptions | BLOCKED (Awaits Dev 2) | `feature/TASK-DEV3-01-appointments-clinical` |
 | **TASK-QA-01** | QA Engineer | Test Strategy, Vitest Test Fixtures & E2E Validation | READY TO START | `feature/TASK-QA-01-test-suite` |
-| **TASK-GIT-01** | Git/GitHub Engineer | GitFlow Conventions, PR Guidelines & Branch Protection Rules | READY TO START | `feature/TASK-GIT-01-gitflow-standards` |
+| **TASK-GIT-01** | Git/GitHub Engineer | GitFlow Conventions, PR Guidelines & Branch Protection Rules | **READY FOR REVIEW** | `feature/TASK-GIT-01-gitflow-standards` |
 | **TASK-CI-01** | Jenkins Engineer | Declarative Jenkinsfile Pipeline (Lint, Test, Build, Staging) | READY TO START | `feature/TASK-CI-01-jenkins-pipeline` |
 | **TASK-DOCKER-01** | Docker Engineer | Production Multi-Stage Dockerfile & Container Optimization | READY TO START | `feature/TASK-DOCKER-01-dockerfile` |
 | **TASK-K8S-01** | Kubernetes Engineer | Kubernetes Deployment, Service, ConfigMap & Probe Manifests | BLOCKED (Awaits Docker) | `feature/TASK-K8S-01-k8s-manifests` |

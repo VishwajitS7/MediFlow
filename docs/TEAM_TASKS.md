@@ -11,7 +11,7 @@
 | Task ID | Role Name | Task Title | Dependencies | Status | PR Branch |
 |---|---|---|---|---|---|
 | **TASK-PO-01** | Product Owner / Team Lead | Repository Foundation, Architecture Baseline & Core Scaffold | None | **COMPLETE AFTER MERGE** | `main` / `develop` |
-| **TASK-GIT-01** | Git/GitHub Engineer | GitFlow Conventions, PR Guidelines & Branch Protection Docs | TASK-PO-01 | **READY TO START** | `feature/TASK-GIT-01-gitflow-standards` |
+| **TASK-GIT-01** | Git/GitHub Engineer | GitFlow Conventions, PR Guidelines & Branch Protection Docs | TASK-PO-01 | **READY FOR REVIEW** | `feature/TASK-GIT-01-gitflow-standards` |
 | **TASK-DEV1-01** | Developer 1 | Auth.js Setup, Role-Based Navigation & Session Shell | TASK-PO-01 | **READY FOR REVIEW** | `feature/TASK-DEV1-01-auth-navigation` |
 | **TASK-DEV2-01** | Developer 2 | Patient Registration, Search & Patient Profiles | TASK-PO-01 | **READY TO START** | `feature/TASK-DEV2-01-patient-management` |
 | **TASK-DEV3-01** | Developer 3 | Appointment Scheduling, Consultations & Prescriptions | TASK-PO-01, TASK-DEV2-01 (API contract) | **BLOCKED** | `feature/TASK-DEV3-01-appointments-clinical` |
@@ -46,7 +46,7 @@
 - **Scope**: Establish Git collaboration guidelines, branching policy, commit message conventions, and merge conflict resolution protocols.
 - **Files Owned**: `docs/GIT_WORKFLOW.md`, `.github/pull_request_template.md`, `.github/workflows/*` (if applicable).
 - **Dependencies**: TASK-PO-01 merged into `develop`.
-- **Status**: READY TO START
+- **Status**: READY FOR REVIEW
 
 ---
 
