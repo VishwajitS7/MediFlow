@@ -219,3 +219,64 @@ This log records every task completion and handoff across all 10 roles in the Me
   - Developer 2: `TASK-DEV2-01` (Patient Registration & Directory)
 
 
+
+---
+
+## Handoff 005: TASK-DEV2-01 — Patient Registration, Directory, Search & Profiles
+
+- **Date**: 2026-10-12
+- **Author**: Developer 2
+- **Task ID**: `TASK-DEV2-01`
+- **Status**: **READY FOR REVIEW**
+- **Target Branch**: `develop`
+- **Working Branch**: `feature/TASK-DEV2-01-patient-management`
+
+### Summary of Implementation:
+1. Canonical `Patient` Mongoose model (`src/models/Patient.ts`) per `docs/DATA_MODEL.md` §2.2, with indexes `{ patientId: 1 }` (unique), `{ phone: 1 }` and the `{ fullName: "text", phone: "text" }` text index.
+2. Zod schemas in `src/lib/validation/patient.ts`: `createPatientSchema`, `updatePatientSchema` (partial, rejects empty bodies, never defaults `allergies` so partial updates cannot wipe them), and `patientListQuerySchema` (page ≥ 1, limit 1–100).
+3. Patient ID generation `MED-<YYYY>-<5-digit sequence>`: sequence restarts every year; the next ID is derived from the highest existing ID, with retry on unique-index collisions from concurrent registrations.
+4. API routes (all return the `ApiResponse<T>` envelope; RBAC via `requireRole`):
+   - `GET /api/patients` — ADMIN/DOCTOR/RECEPTIONIST; `query`, `page`, `limit`; case-insensitive partial match on name, phone, or patient ID (regex-escaped input).
+   - `POST /api/patients` — ADMIN/RECEPTIONIST; 409 on duplicate phone/email; 201 with created record.
+   - `GET /api/patients/:id` — ADMIN/DOCTOR/RECEPTIONIST, or PATIENT restricted to the record linked by `userId` (returns 404 for other records so existence is not disclosed). `:id` accepts a Mongo ObjectId or a `MED-YYYY-XXXXX` ID.
+   - `PUT /api/patients/:id` — ADMIN/RECEPTIONIST; partial update, 409 on phone/email collision with another patient; sending `""` for `email`/`bloodGroup` clears them.
+   - Error mapping: 400 validation (Zod field errors in `details`), 401, 403, 404, 409, 503 when MongoDB is unreachable/unconfigured, 500 without leaking internals.
+5. UI (`src/features/patients/*`, `src/app/(dashboard)/patients/*`):
+   - `/patients` directory: debounced instant search, paginated table, "Register New Patient" modal (ADMIN/RECEPTIONIST only), inline edit, success notice linking to the new record, loading/empty/error/forbidden/sign-in states.
+   - `/patients/[id]` profile: identity header, allergy alert banner, demographic cards, contact/emergency/address cards, latest-vitals card, and Consultations/Prescriptions tabs (empty states until TASK-DEV3-01 lands).
+   - `patient-form.tsx`: client-side Zod validation with per-field messages, gender + blood-group selectors, allergy multi-tag input, relationship suggestions.
+
+### Files Created:
+- `src/models/Patient.ts`
+- `src/lib/validation/patient.ts`
+- `src/app/api/patients/route.ts`
+- `src/app/api/patients/[id]/route.ts`
+- `src/app/(dashboard)/patients/page.tsx`
+- `src/app/(dashboard)/patients/[id]/page.tsx`
+- `src/features/patients/` — `patient-form.tsx`, `patient-table.tsx`, `patient-search.tsx`, `patient-profile.tsx`, `patient-detail-view.tsx`, `patient-dialog.tsx`, `patient-badges.tsx`, `patient-access-state.tsx`, `patient-client.ts`, `patient-utils.ts`, `types.ts`, `server/patient-api.ts`
+- `tests/unit/patient.test.ts`
+
+### Files Modified:
+- `docs/TEAM_TASKS.md`, `docs/PROJECT_STATUS.md`, `docs/HANDOFF_LOG.md`, `README.md` (status only)
+
+No protected shared files (`package.json`, `src/lib/db/mongodb.ts`, `src/lib/auth/*`, `src/types/*`, layout/globals) were changed.
+
+### Verification Commands & Results:
+- `npm run lint`: Passed (0 errors, 0 warnings)
+- `npm run typecheck`: Passed (`tsc --noEmit` exit 0)
+- `npm test`: Passed (38/38 across 3 files; 26 new in `tests/unit/patient.test.ts`)
+- `npm run build`: Passed (`/patients` static, `/patients/[id]` partial prerender, `/api/patients*` dynamic)
+- Manual (dev server, no database): `/patients` shows the sign-in state when signed out; `GET /api/patients` and `PUT /api/patients/:id` return 401 envelopes; table, profile, and form render correctly at desktop and 375px widths; form shows inline validation errors.
+
+### Known Issues & Limitations:
+- **Not verified against a live MongoDB**: no `MONGODB_URI`/local MongoDB was available, so signed-in create/search/update flows were not exercised end to end. QA should run them with a sandbox database.
+- `GET /api/patients` search uses regex partial matching (needed for as-you-type search and patient-ID lookup) rather than the `$text` index; the text index is still created per the data model.
+- `PUT /api/patients/:id` is not yet listed in `docs/API_CONTRACTS.md` §2.3 (it is specified in the TASK-DEV2-01 guide). PO to add it.
+- PATIENT self-access depends on `Patient.userId` being linked; no endpoint links a portal user to a patient record yet, and PATIENT has no "my record" entry point. Proposed follow-up for PO.
+- Vitals, consultation history, and prescriptions on the profile are placeholders until TASK-DEV3-01.
+
+### Next Owner & Action:
+- **Next Action**: Product Owner / Team Lead to review and merge `feature/TASK-DEV2-01-patient-management` into `develop`.
+- **Immediate Follow-up Tasks**:
+  - Developer 3: `TASK-DEV3-01` — reference patients via `Patient._id`; use `GET /api/patients?query=` for patient pickers.
+  - QA Engineer: `TASK-QA-01` — integration tests for `/api/patients*` (RBAC matrix, 409 duplicates, PATIENT isolation).
