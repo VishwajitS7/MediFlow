@@ -46,11 +46,20 @@ export function calculateAge(dateOfBirth: string | Date, now: Date = new Date())
   return Math.max(age, 0);
 }
 
-export function formatDate(value: string | Date | undefined): string {
+/**
+ * Formats a date for display. Calendar dates (e.g. date of birth, stored as UTC midnight) render in UTC
+ * so they never shift a day; timestamps (`dateOnly: false`) render in the viewer's local time zone.
+ */
+export function formatDate(value: string | Date | undefined, { dateOnly = true }: { dateOnly?: boolean } = {}): string {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    ...(dateOnly ? { timeZone: "UTC" } : {}),
+  });
 }
 
 /** Converts a date into the `YYYY-MM-DD` string expected by `<input type="date">`. */

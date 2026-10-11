@@ -61,12 +61,17 @@ export const createPatientSchema = z.object({
 });
 
 // `allergies` is redeclared without a default so omitting it in an update leaves stored allergies untouched.
-export const updatePatientSchema = createPatientSchema
-  .extend({ allergies: allergiesField })
-  .partial()
-  .refine((data) => Object.values(data).some((value) => value !== undefined), {
+const patientUpdateFields = createPatientSchema.extend({ allergies: allergiesField }).partial();
+const UPDATABLE_KEYS = new Set(Object.keys(patientUpdateFields.shape));
+
+// The non-empty check runs on the raw body, before transforms turn "" into undefined,
+// so `{ "email": "" }` is a valid request that clears the stored email.
+export const updatePatientSchema = z
+  .record(z.string(), z.unknown())
+  .refine((body) => Object.keys(body).some((key) => UPDATABLE_KEYS.has(key)), {
     message: "At least one field must be provided for update",
-  });
+  })
+  .pipe(patientUpdateFields);
 
 export const patientListQuerySchema = z.object({
   query: z.string().trim().max(100).optional().default(""),
@@ -78,6 +83,6 @@ export type CreatePatientInput = z.infer<typeof createPatientSchema>;
 /** Raw request body accepted by POST /api/patients (before Zod transforms). */
 export type CreatePatientPayload = z.input<typeof createPatientSchema>;
 /** Raw request body accepted by PUT /api/patients/:id. Send "" for email/bloodGroup to clear them. */
-export type UpdatePatientPayload = z.input<typeof updatePatientSchema>;
+export type UpdatePatientPayload = z.input<typeof patientUpdateFields>;
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
 export type PatientListQuery = z.infer<typeof patientListQuerySchema>;

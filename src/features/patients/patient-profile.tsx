@@ -33,7 +33,7 @@ export function PatientProfile({ patient, canEdit = false, onEdit }: PatientProf
   return (
     <div className="flex flex-col gap-4">
       {/* Identity header */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-teal-950/40 p-6">
+      <div className="relative overflow-clip rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-teal-950/40 p-6">
         <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
           <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-teal-500/20 shrink-0">
@@ -52,7 +52,7 @@ export function PatientProfile({ patient, canEdit = false, onEdit }: PatientProf
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                Registered {formatDate(patient.createdAt)}
+                Registered {formatDate(patient.createdAt, { dateOnly: false })}
               </span>
             </div>
           </div>

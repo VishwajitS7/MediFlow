@@ -264,12 +264,19 @@ No protected shared files (`package.json`, `src/lib/db/mongodb.ts`, `src/lib/aut
 ### Verification Commands & Results:
 - `npm run lint`: Passed (0 errors, 0 warnings)
 - `npm run typecheck`: Passed (`tsc --noEmit` exit 0)
-- `npm test`: Passed (38/38 across 3 files; 26 new in `tests/unit/patient.test.ts`)
+- `npm test`: Passed (40/40 across 3 files; 28 new in `tests/unit/patient.test.ts`)
 - `npm run build`: Passed (`/patients` static, `/patients/[id]` partial prerender, `/api/patients*` dynamic)
 - Manual (dev server, no database): `/patients` shows the sign-in state when signed out; `GET /api/patients` and `PUT /api/patients/:id` return 401 envelopes; table, profile, and form render correctly at desktop and 375px widths; form shows inline validation errors.
+- **End-to-end verification (2026-10-12)** against a throwaway in-memory MongoDB (`mongodb-memory-server`, synthetic data only) with the four demo accounts:
+  - UI as RECEPTIONIST: login → register patient via modal (assigned `MED-2026-00001`) → debounced search → pagination (13 records, 2 pages) → profile → edit (remove allergy, clear email, add city) all succeed.
+  - API: sequential IDs `00001`–`00015`; 409 on duplicate phone (create and update); 400 with field errors on invalid input and malformed JSON; `limit=500` rejected; regex metacharacters in `query` are escaped; 404 for unknown/malformed IDs; partial update keeps allergies.
+  - RBAC matrix — ADMIN: list/get/create/update ✔; DOCTOR: list/get ✔, create/update 403; RECEPTIONIST: all ✔; PATIENT: list/create/update 403, other patients 404, own linked record 200 (UI shows profile without edit controls).
+  - Mongo indexes present: `patientId_1` (unique), `phone_1`, `fullName_text_phone_text`.
+  - Fixes from this pass: `PUT` with only `{"email": ""}` now clears the field (was 400); "Registered" timestamp renders in local time (was UTC, off by one day in IST); profile header no longer shifts after closing the edit dialog; read-only subtitle for DOCTOR.
 
 ### Known Issues & Limitations:
-- **Not verified against a live MongoDB**: no `MONGODB_URI`/local MongoDB was available, so signed-in create/search/update flows were not exercised end to end. QA should run them with a sandbox database.
+- **Security (Developer 1 scope, not changed here)**: `POST /api/auth/register` is unauthenticated and accepts any `role`, and `/register` exposes a "System Role" selector, so anyone can self-provision an `ADMIN` account. `docs/API_CONTRACTS.md` §2.2 requires ADMIN for provisioning. Needs a PO decision (e.g. self-registration limited to `PATIENT`, staff roles ADMIN-only) and a fix in `TASK-DEV1-01` scope.
+- Home page (`src/app/page.tsx`) team-status cards are hard-coded and out of date; navbar links `/appointments` and `/consultations` return 404 until TASK-DEV3-01.
 - `GET /api/patients` search uses regex partial matching (needed for as-you-type search and patient-ID lookup) rather than the `$text` index; the text index is still created per the data model.
 - `PUT /api/patients/:id` is not yet listed in `docs/API_CONTRACTS.md` §2.3 (it is specified in the TASK-DEV2-01 guide). PO to add it.
 - PATIENT self-access depends on `Patient.userId` being linked; no endpoint links a portal user to a patient record yet, and PATIENT has no "my record" entry point. Proposed follow-up for PO.

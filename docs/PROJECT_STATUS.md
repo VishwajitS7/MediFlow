@@ -22,7 +22,7 @@
 | **TASK-PO-01** | Product Owner / Team Lead | **MERGED** | `develop` | Baseline Next.js scaffold, documentation suite, shared utilities, and verification scripts merged. |
 | **TASK-GIT-01** | Git/GitHub Engineer | **READY FOR REVIEW** | `feature/TASK-GIT-01-gitflow-standards` | GitFlow standards, PR template, CODEOWNERS, issue templates, and PR verification CI created. |
 | **TASK-DEV1-01** | Developer 1 | **READY FOR REVIEW** | `feature/TASK-DEV1-01-auth-navigation` | NextAuth credentials provider, User model, Zod validation, Register/Me APIs, RBAC guards, Login/Register UI, and tests complete. |
-| **TASK-DEV2-01** | Developer 2 | **READY FOR REVIEW** | `feature/TASK-DEV2-01-patient-management` | Patient model, Zod schemas, `/api/patients` (GET/POST) and `/api/patients/[id]` (GET/PUT) with RBAC, directory/registration/profile UI, and 26 unit tests complete. |
+| **TASK-DEV2-01** | Developer 2 | **READY FOR REVIEW** | `feature/TASK-DEV2-01-patient-management` | Patient model, Zod schemas, `/api/patients` (GET/POST) and `/api/patients/[id]` (GET/PUT) with RBAC, directory/registration/profile UI, and 28 unit tests complete; verified end-to-end against a test MongoDB. |
 | **TASK-DEV3-01** | Developer 3 | **BLOCKED** | - | Patient API contract now available on `feature/TASK-DEV2-01-patient-management`; unblocks once merged into `develop`. |
 | **TASK-QA-01** | QA Engineer | **READY TO START** | `feature/TASK-QA-01-test-suite` | Unblocked. |
 | **TASK-CI-01** | Jenkins Engineer | **READY FOR REVIEW** | `feature/TASK-CI-01-jenkins-pipeline` | Declarative Jenkins CI pipeline, NodeJS 20 tool config, and setup documentation complete. |
@@ -34,6 +34,7 @@
 
 ## 3. Active Blockers & Known Issues
 
+- **Security (open, TASK-DEV1-01 scope)**: `POST /api/auth/register` lets unauthenticated users create `ADMIN`/`DOCTOR`/`RECEPTIONIST` accounts. Awaiting PO decision on self-registration policy.
 - **Blockers**: None. The repository foundation is established cleanly.
 - **Known Limitations**:
   - MongoDB connection requires a live `MONGODB_URI` environment variable for end-to-end database operations (fallback graceful handling implemented).

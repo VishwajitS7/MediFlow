@@ -106,7 +106,7 @@ export default function PatientsDirectoryPage() {
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Patient Directory</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Search, register, and manage outpatient records.
+            {canEdit ? "Search, register, and manage outpatient records." : "Search and review outpatient records."}
             {data && (
               <span className="ml-1 text-slate-300">
                 <span className="font-semibold text-white">{total}</span>{" "}

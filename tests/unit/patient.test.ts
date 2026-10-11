@@ -12,6 +12,7 @@ import {
   nextPatientId,
   toDateInputValue,
   getInitials,
+  formatDate,
 } from "../../src/features/patients/patient-utils";
 
 // Synthetic test data only — no real patient information.
@@ -129,8 +130,15 @@ describe("Developer 2: Patient Management Suite", () => {
       expect(updatePatientSchema.safeParse({ phone: "12" }).success).toBe(false);
     });
 
-    it("rejects an empty update", () => {
+    it("rejects an empty update or one with only unknown fields", () => {
       expect(updatePatientSchema.safeParse({}).success).toBe(false);
+      expect(updatePatientSchema.safeParse({ unknownField: "x" }).success).toBe(false);
+    });
+
+    it("accepts clearing an optional field with an empty string", () => {
+      const result = updatePatientSchema.safeParse({ email: "" });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.email).toBeUndefined();
     });
   });
 
@@ -198,6 +206,11 @@ describe("Developer 2: Patient Management Suite", () => {
       expect(toDateInputValue("1988-04-12T00:00:00.000Z")).toBe("1988-04-12");
       expect(toDateInputValue(undefined)).toBe("");
       expect(getInitials("Jane  Mary Doe")).toBe("JM");
+    });
+
+    it("formats calendar dates in UTC so they never shift a day", () => {
+      expect(formatDate("1988-04-12T00:00:00.000Z")).toBe("12 Apr 1988");
+      expect(formatDate(undefined)).toBe("—");
     });
   });
 });
