@@ -1,0 +1,71 @@
+# MediFlow — Code Owners Configuration
+# Governed by AGENTS.md and docs/TEAM_TASKS.md
+# Maps repository directories and critical files to specific team roles.
+
+# Global Default Owner: Product Owner / Team Lead
+* @VishwajitS7
+
+# Role 1: Product Owner / Team Lead
+/docs/PROJECT_SPEC.md @VishwajitS7
+/docs/ARCHITECTURE.md @VishwajitS7
+/docs/DATA_MODEL.md @VishwajitS7
+/docs/DECISIONS.md @VishwajitS7
+/docs/TEAM_TASKS.md @VishwajitS7
+/docs/PROJECT_STATUS.md @VishwajitS7
+/docs/HANDOFF_LOG.md @VishwajitS7
+/AGENTS.md @VishwajitS7
+/README.md @VishwajitS7
+
+# Role 2: Developer 1 (Authentication, User Model & Navigation Shell)
+/src/lib/auth/ @VishwajitS7
+/src/features/auth/ @VishwajitS7
+/src/models/User.ts @VishwajitS7
+/src/app/(auth)/ @VishwajitS7
+/src/app/api/auth/ @VishwajitS7
+/src/components/shared/navbar.tsx @VishwajitS7
+
+# Role 3: Developer 2 (Patient Management, Directory & Search)
+/src/models/Patient.ts @VishwajitS7
+/src/lib/validation/patient.ts @VishwajitS7
+/src/features/patients/ @VishwajitS7
+/src/app/(dashboard)/patients/ @VishwajitS7
+/src/app/api/patients/ @VishwajitS7
+
+# Role 4: Developer 3 (Appointments, Clinical Consultations & Prescriptions)
+/src/models/Appointment.ts @VishwajitS7
+/src/models/Consultation.ts @VishwajitS7
+/src/models/Prescription.ts @VishwajitS7
+/src/lib/validation/appointment.ts @VishwajitS7
+/src/lib/validation/consultation.ts @VishwajitS7
+/src/lib/validation/prescription.ts @VishwajitS7
+/src/features/appointments/ @VishwajitS7
+/src/features/consultations/ @VishwajitS7
+/src/features/prescriptions/ @VishwajitS7
+/src/app/api/appointments/ @VishwajitS7
+/src/app/api/consultations/ @VishwajitS7
+/src/app/api/prescriptions/ @VishwajitS7
+
+# Role 5: QA Engineer (Testing Suite, Fixtures & Plan)
+/tests/ @VishwajitS7
+/docs/TEST_PLAN.md @VishwajitS7
+
+# Role 6: Git/GitHub Engineer (GitFlow Standards, Templates & Workflows)
+/.github/ @VishwajitS7
+/docs/GIT_WORKFLOW.md @VishwajitS7
+
+# Role 7: Jenkins Engineer (Declarative CI Pipeline)
+/Jenkinsfile @VishwajitS7
+/docs/JENKINS_SETUP.md @VishwajitS7
+
+# Role 8: Docker Engineer (Containerization & Optimization)
+/Dockerfile @VishwajitS7
+/.dockerignore @VishwajitS7
+/docs/DOCKER_GUIDE.md @VishwajitS7
+
+# Role 9: Kubernetes Engineer (Manifests & Orchestration)
+/k8s/ @VishwajitS7
+/docs/K8S_DEPLOYMENT.md @VishwajitS7
+
+# Role 10: DevOps/SRE Engineer (Observability, Telemetry & Health)
+/src/app/api/health/ @VishwajitS7
+/docs/SRE_RUNBOOK.md @VishwajitS7
