@@ -25,7 +25,7 @@
 | **TASK-DEV2-01** | Developer 2 | **READY TO START** | `feature/TASK-DEV2-01-patient-management` | Unblocked. |
 | **TASK-DEV3-01** | Developer 3 | **BLOCKED** | - | Awaiting TASK-DEV2-01 interface stability. |
 | **TASK-QA-01** | QA Engineer | **READY TO START** | `feature/TASK-QA-01-test-suite` | Unblocked. |
-| **TASK-CI-01** | Jenkins Engineer | **READY TO START** | `feature/TASK-CI-01-jenkins-pipeline` | Unblocked. |
+| **TASK-CI-01** | Jenkins Engineer | **READY FOR REVIEW** | `feature/TASK-CI-01-jenkins-pipeline` | Declarative Jenkins CI pipeline, NodeJS 20 tool config, and setup documentation complete. |
 | **TASK-DOCKER-01** | Docker Engineer | **READY TO START** | `feature/TASK-DOCKER-01-dockerfile` | Unblocked. |
 | **TASK-K8S-01** | Kubernetes Engineer | **BLOCKED** | - | Awaiting TASK-DOCKER-01 container image. |
 | **TASK-SRE-01** | DevOps/SRE Engineer | **READY TO START** | `feature/TASK-SRE-01-health-observability` | Unblocked. |
