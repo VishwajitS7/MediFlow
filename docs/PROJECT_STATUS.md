@@ -20,7 +20,7 @@
 | Feature / Task | Owner Role | Status | PR / Branch | Notes |
 |---|---|---|---|---|
 | **TASK-PO-01** | Product Owner / Team Lead | **MERGED** | `develop` | Baseline Next.js scaffold, documentation suite, shared utilities, and verification scripts merged. |
-| **TASK-GIT-01** | Git/GitHub Engineer | **READY TO START** | `feature/TASK-GIT-01-gitflow-standards` | Unblocked. |
+| **TASK-GIT-01** | Git/GitHub Engineer | **READY FOR REVIEW** | `feature/TASK-GIT-01-gitflow-standards` | GitFlow standards, PR template, CODEOWNERS, issue templates, and PR verification CI created. |
 | **TASK-DEV1-01** | Developer 1 | **READY FOR REVIEW** | `feature/TASK-DEV1-01-auth-navigation` | NextAuth credentials provider, User model, Zod validation, Register/Me APIs, RBAC guards, Login/Register UI, and tests complete. |
 | **TASK-DEV2-01** | Developer 2 | **READY TO START** | `feature/TASK-DEV2-01-patient-management` | Unblocked. |
 | **TASK-DEV3-01** | Developer 3 | **BLOCKED** | - | Awaiting TASK-DEV2-01 interface stability. |
