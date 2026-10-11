@@ -23,7 +23,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+    <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 print:hidden">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Brand */}
         <div className="flex items-center gap-3 lg:gap-6 min-w-0">
@@ -58,7 +58,7 @@ export function Navbar() {
                   Patients
                 </Link>
               )}
-              {["ADMIN", "DOCTOR", "RECEPTIONIST"].includes(session.user.role) && (
+              {["ADMIN", "DOCTOR", "RECEPTIONIST", "PATIENT"].includes(session.user.role) && (
                 <Link
                   href="/appointments"
                   className="px-2 lg:px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-300 hover:text-white hover:bg-slate-800/60 transition"
@@ -101,7 +101,7 @@ export function Navbar() {
             <div className="h-8 w-20 bg-slate-800 animate-pulse rounded-lg" />
           ) : session?.user ? (
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60">
                 <Shield className="h-4 w-4 text-teal-400" />
                 <div className="flex flex-col text-left">
                   <span className="text-xs font-semibold text-white leading-tight whitespace-nowrap truncate max-w-36">

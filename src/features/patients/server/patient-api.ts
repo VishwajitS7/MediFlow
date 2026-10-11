@@ -1,62 +1,14 @@
 // Server-only module: imported exclusively by route handlers under src/app/api/patients.
-import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { Patient, IPatientDocument } from "@/models/Patient";
-import { ApiResponse, IPatient } from "@/types";
+import { IPatient } from "@/types";
 import { isPatientId, nextPatientId } from "@/features/patients/patient-utils";
+import { handleRouteError as handleApiError } from "@/lib/api/http";
 
-type ErrorCode =
-  | "VALIDATION_ERROR"
-  | "UNAUTHORIZED"
-  | "FORBIDDEN"
-  | "NOT_FOUND"
-  | "CONFLICT"
-  | "SERVICE_UNAVAILABLE"
-  | "INTERNAL_SERVER_ERROR";
+export { jsonSuccess, jsonError, isMongoDuplicateKeyError } from "@/lib/api/http";
 
-export function jsonSuccess<T>(data: T, status = 200) {
-  const body: ApiResponse<T> = { success: true, data, timestamp: new Date().toISOString() };
-  return NextResponse.json(body, { status });
-}
-
-export function jsonError(status: number, code: ErrorCode, message: string, details?: unknown) {
-  const body: ApiResponse = {
-    success: false,
-    error: { code, message, ...(details !== undefined ? { details } : {}) },
-    timestamp: new Date().toISOString(),
-  };
-  return NextResponse.json(body, { status });
-}
-
-function isMongoDuplicateKeyError(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code: unknown }).code === 11000;
-}
-
-/**
- * Maps thrown errors (RBAC guards, Mongo, connection failures) to the standard error envelope.
- * Never echoes raw internal error messages for unexpected failures.
- */
 export function handleRouteError(error: unknown) {
-  if (error instanceof Error) {
-    if (error.name === "UNAUTHORIZED") {
-      return jsonError(401, "UNAUTHORIZED", "You must be signed in to access this resource.");
-    }
-    if (error.name === "FORBIDDEN") {
-      return jsonError(403, "FORBIDDEN", "You do not have permission to perform this action.");
-    }
-    if (
-      error.message.includes("MONGODB_URI") ||
-      error.name === "MongooseServerSelectionError" ||
-      error.name === "MongoServerSelectionError"
-    ) {
-      return jsonError(503, "SERVICE_UNAVAILABLE", "The patient database is currently unavailable.");
-    }
-  }
-  if (isMongoDuplicateKeyError(error)) {
-    return jsonError(409, "CONFLICT", "A patient record with these unique details already exists.");
-  }
-  console.error("[patients] Unhandled route error:", error instanceof Error ? error.name : "unknown");
-  return jsonError(500, "INTERNAL_SERVER_ERROR", "An unexpected error occurred.");
+  return handleApiError(error, "patients");
 }
 
 type LeanPatient = Pick<
@@ -130,4 +82,3 @@ export async function generatePatientId(now: Date = new Date()): Promise<string>
   return nextPatientId(latest?.patientId, year);
 }
 
-export { isMongoDuplicateKeyError };

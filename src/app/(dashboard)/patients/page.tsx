@@ -10,8 +10,8 @@ import { listPatients, PatientApiError } from "@/features/patients/patient-clien
 import { PatientSearch } from "@/features/patients/patient-search";
 import { PatientTable } from "@/features/patients/patient-table";
 import { PatientForm } from "@/features/patients/patient-form";
-import { PatientDialog } from "@/features/patients/patient-dialog";
-import { PatientAccessState, accessStateFromStatus } from "@/features/patients/patient-access-state";
+import { Dialog } from "@/components/ui/dialog";
+import { AccessState, accessStateFromStatus } from "@/components/ui/access-state";
 
 const PAGE_SIZE = 10;
 const VIEW_ROLES: UserRole[] = ["ADMIN", "DOCTOR", "RECEPTIONIST"];
@@ -75,14 +75,14 @@ export default function PatientsDirectoryPage() {
     return <DirectorySkeleton />;
   }
   if (status === "unauthenticated") {
-    return <PatientAccessState kind="unauthenticated" />;
+    return <AccessState kind="unauthenticated" />;
   }
   if (!canView) {
-    return <PatientAccessState kind="forbidden" message="The patient directory is available to clinic staff only." />;
+    return <AccessState resource="patient" kind="forbidden" message="The patient directory is available to clinic staff only." />;
   }
   if (error && !data && error.status !== 400) {
     return (
-      <PatientAccessState
+      <AccessState resource="patient"
         kind={accessStateFromStatus(error.status)}
         action={<RetryButton onClick={() => setReloadToken((t) => t + 1)} />}
       />
@@ -207,7 +207,7 @@ export default function PatientsDirectoryPage() {
         </div>
       )}
 
-      <PatientDialog
+      <Dialog
         open={dialog !== null}
         title={dialog?.mode === "edit" ? `Edit ${dialog.patient.fullName}` : "Register New Patient"}
         description={
@@ -225,7 +225,7 @@ export default function PatientsDirectoryPage() {
             onCancel={() => setDialog(null)}
           />
         )}
-      </PatientDialog>
+      </Dialog>
     </main>
   );
 }

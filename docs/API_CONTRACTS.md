@@ -174,9 +174,12 @@ All API endpoints in MediFlow adhere to standardized JSON payloads.
 - **Query Parameters**:
   - `doctorId` (string, optional)
   - `patientId` (string, optional)
-  - `date` (string, YYYY-MM-DD, optional)
+  - `date` (string, YYYY-MM-DD, optional) — calendar day in `CLINIC_TIMEZONE`
+  - `from` / `to` (ISO date-time, optional) — explicit `[from, to)` range; takes precedence over `date`
   - `status` (string, optional)
-- **Response `200 OK`**: Array of appointments with populated doctor and patient details.
+  - `limit` (number, 1–500, default 200)
+- **Access**: `PATIENT` is always restricted to their own linked record (any `patientId` filter is ignored).
+- **Response `200 OK`**: Array of appointments sorted by `dateTime`, each with `patient` (`_id`, `patientId`, `fullName`, `phone`, `gender`, `dateOfBirth`, `allergies`) and `doctor` (`_id`, `name`, `specialization`) summaries.
 
 #### `POST /api/appointments`
 - **Purpose**: Book an appointment.
@@ -191,7 +194,16 @@ All API endpoints in MediFlow adhere to standardized JSON payloads.
   "notes": "Patient requested afternoon slot"
 }
 ```
+- **Rules**: `dateTime` may not be in the past (5-minute grace) or more than a year ahead; `doctorId` must be an active `DOCTOR`; a doctor or patient already booked within 30 minutes of `dateTime` returns `409 CONFLICT`. A daily `queueNumber` (per doctor, per clinic day) is assigned.
 - **Response `201 Created`**: Created appointment with status `SCHEDULED`.
+
+#### `GET /api/appointments/:id` *(added in TASK-DEV3-01)*
+- **Purpose**: Single appointment with participant summaries.
+- **Auth**: `ADMIN`, `DOCTOR`, `RECEPTIONIST`, `PATIENT` (own appointments only; others return `404`).
+
+#### `GET /api/appointments/doctors` *(added in TASK-DEV3-01)*
+- **Purpose**: Active doctors for booking (`_id`, `name`, `specialization`).
+- **Auth**: `ADMIN`, `RECEPTIONIST`, `DOCTOR`.
 
 #### `PATCH /api/appointments/:id/status`
 - **Purpose**: Update appointment workflow lifecycle.
@@ -202,6 +214,7 @@ All API endpoints in MediFlow adhere to standardized JSON payloads.
   "status": "CONFIRMED | IN_PROGRESS | COMPLETED | CANCELLED | NO_SHOW"
 }
 ```
+- **Workflow**: `SCHEDULED → CONFIRMED | IN_PROGRESS | CANCELLED | NO_SHOW`; `CONFIRMED → IN_PROGRESS | CANCELLED | NO_SHOW`; `IN_PROGRESS → COMPLETED`. `COMPLETED`, `CANCELLED`, `NO_SHOW` are terminal. Invalid transitions return `409`. `COMPLETED` requires a completed consultation. Doctors may only update their own appointments (`403`).
 - **Response `200 OK`**: Updated appointment object.
 
 ---
@@ -232,11 +245,21 @@ All API endpoints in MediFlow adhere to standardized JSON payloads.
   "status": "COMPLETED"
 }
 ```
-- **Response `201 Created`**: Created consultation record. Also transitions linked appointment to `COMPLETED`.
+- **Rules**: Only the doctor assigned to the appointment (`403` otherwise); `patientId` must match the appointment; the appointment must be `SCHEDULED`, `CONFIRMED` or `IN_PROGRESS` (`409` otherwise); one consultation per appointment (`409`). `status` defaults to `COMPLETED`.
+- **Response `201 Created`**: Created consultation record. `COMPLETED` transitions the linked appointment to `COMPLETED`; `DRAFT` transitions it to `IN_PROGRESS`.
+
+#### `GET /api/consultations` *(added in TASK-DEV3-01)*
+- **Purpose**: Consultation history, newest first.
+- **Auth**: `DOCTOR`, `ADMIN`, `PATIENT` (own `COMPLETED` records only). `RECEPTIONIST` receives `403`.
+- **Query Parameters**: `patientId`, `doctorId`, `appointmentId`, `limit` (1–100, default 50).
+
+#### `PUT /api/consultations/:id` *(added in TASK-DEV3-01)*
+- **Purpose**: Edit a `DRAFT` consultation (`vitals`, `chiefComplaint`, `symptoms`, `diagnosis`, `clinicalNotes`, `status`).
+- **Auth**: `DOCTOR` (author only). `COMPLETED` consultations are locked and return `409`. Setting `status: "COMPLETED"` locks the record and completes the appointment.
 
 #### `GET /api/consultations/:id`
 - **Purpose**: Retrieve consultation detail.
-- **Auth**: `DOCTOR`, `ADMIN`, `PATIENT` (self).
+- **Auth**: `DOCTOR`, `ADMIN`, `PATIENT` (self, `COMPLETED` only; others return `404`).
 - **Response `200 OK`**: Consultation document.
 
 ---
@@ -270,6 +293,7 @@ All API endpoints in MediFlow adhere to standardized JSON payloads.
   "generalInstructions": "Drink plenty of warm liquids."
 }
 ```
+- **Rules**: Only the doctor who authored the consultation (`403` otherwise); `patientId` must match the consultation; 1–20 medications, `durationDays` 1–365.
 - **Response `201 Created`**: Created prescription record.
 
 #### `GET /api/prescriptions`
@@ -277,3 +301,7 @@ All API endpoints in MediFlow adhere to standardized JSON payloads.
 - **Auth**: `DOCTOR`, `ADMIN`, `RECEPTIONIST`, `PATIENT` (self).
 - **Query Parameters**: `patientId`, `consultationId`.
 - **Response `200 OK`**: Prescriptions list.
+
+#### `GET /api/prescriptions/:id` *(added in TASK-DEV3-01)*
+- **Purpose**: Single prescription with patient and doctor summaries (printable view).
+- **Auth**: `DOCTOR`, `ADMIN`, `RECEPTIONIST`, `PATIENT` (own prescriptions only; others return `404`).

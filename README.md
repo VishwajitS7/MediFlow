@@ -14,7 +14,7 @@ MediFlow is developed by a coordinated 10-member DevOps engineering team. Below 
 | **TASK-PO-01** | Product Owner / Team Lead | Repository Architecture, Foundation & Baseline Scaffold | **MERGED** | `main` / `develop` |
 | **TASK-DEV1-01** | Developer 1 | Authentication Engine, User Model, RBAC & Navigation Shell | **READY FOR REVIEW** | `feature/TASK-DEV1-01-auth-navigation` |
 | **TASK-DEV2-01** | **Developer 2** | **Patient Registration, Patient Directory, Search & Profiles** | **READY FOR REVIEW** | `feature/TASK-DEV2-01-patient-management` |
-| **TASK-DEV3-01** | Developer 3 | Appointment Scheduling, Clinical Consultations & Prescriptions | BLOCKED (Awaits Dev 2) | `feature/TASK-DEV3-01-appointments-clinical` |
+| **TASK-DEV3-01** | Developer 3 | Appointment Scheduling, Clinical Consultations & Prescriptions | READY FOR REVIEW | `feature/TASK-DEV3-01-appointments-clinical` |
 | **TASK-QA-01** | QA Engineer | Test Strategy, Vitest Test Fixtures & E2E Validation | READY TO START | `feature/TASK-QA-01-test-suite` |
 | **TASK-GIT-01** | Git/GitHub Engineer | GitFlow Conventions, PR Guidelines & Branch Protection Rules | **READY FOR REVIEW** | `feature/TASK-GIT-01-gitflow-standards` |
 | **TASK-CI-01** | Jenkins Engineer | Declarative Jenkinsfile Pipeline (Lint, Test, Build, Staging) | READY TO START | `feature/TASK-CI-01-jenkins-pipeline` |

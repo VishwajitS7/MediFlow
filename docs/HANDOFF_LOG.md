@@ -320,3 +320,50 @@ No protected shared files (`package.json`, `src/lib/db/mongodb.ts`, `src/lib/aut
 ### Next Owner & Action:
 - Product Owner / Team Lead: review; consider an ADR recording the self-registration policy.
 - QA Engineer: add integration tests for `/api/auth/register` authorization.
+
+---
+
+## Handoff 007: TASK-DEV3-01 — Appointments, Consultations & Prescriptions
+
+- **Date**: 2026-10-12
+- **Author**: Developer 3
+- **Task ID**: `TASK-DEV3-01`
+- **Status**: **READY FOR REVIEW**
+- **Target Branch**: `develop`
+- **Working Branch**: `feature/TASK-DEV3-01-appointments-clinical`
+
+### Summary of Implementation:
+1. **Models** (`src/models/`): `Appointment`, `Consultation`, `Prescription` per `docs/DATA_MODEL.md` §2.3–2.5, including all listed indexes (`appointmentId` unique on consultations).
+2. **Validation** (`src/lib/validation/`): `appointment.ts`, `consultation.ts` (vital ranges, systolic > diastolic), `prescription.ts`, shared `common.ts` (ObjectId, optional text).
+3. **APIs** (contracts in `docs/API_CONTRACTS.md` §2.4–2.6; additions marked *added in TASK-DEV3-01*):
+   - Appointments: list (doctor/patient/status/date in `CLINIC_TIMEZONE` or from/to), book (30-min double-booking checks for doctor and patient, daily per-doctor queue token), detail, `PATCH …/status` with an explicit workflow state machine, active-doctor list.
+   - Consultations: create (assigned doctor only; DRAFT → appointment IN_PROGRESS, COMPLETED → appointment COMPLETED), list/detail, `PUT` for drafts only (completed records locked).
+   - Prescriptions: create (authoring doctor only), list, detail.
+   - PATIENT role is always scoped to the record linked by `Patient.userId`; receptionists cannot read clinical notes.
+4. **UI**:
+   - `/appointments` — staff day view (date navigation, doctor/status filters, stats, live queue panel with 30 s refresh, role-aware Confirm / Start Visit / No-show / Cancel actions) and booking dialog (patient search, doctor, date, 30-minute slot grid with booked/past slots disabled). Patients see "My Appointments" (upcoming/past, read-only).
+   - `/appointments/[id]` — visit page: details, allergy alert, consultation workspace (vitals, symptoms tags, diagnosis, notes; Save Draft / Complete & Lock) or read-only record, prescription composer (frequency presets, allergy-match warning) and list.
+   - `/consultations` — doctor console (today's queue + recent records with draft/completed state); admin sees all doctors.
+   - `/prescriptions/[id]` — printable prescription (`print:` styles, navbar hidden on print).
+   - `/patients/[id]` — Overview now shows latest vitals + next visit; new Appointments tab; Consultations and Prescriptions tabs show real history; "Book Appointment" for staff.
+5. **Shared refactors**: generic `src/lib/api/http.ts` (response envelope + error mapping, rethrows Next.js internal errors), `src/lib/api/client.ts`, `src/lib/api/use-api-query.ts`, `src/components/ui/dialog.tsx` and `src/components/ui/access-state.tsx` (moved from the patients feature and generalized; patient pages updated). Navbar: Appointments link for PATIENT, `print:hidden`, identity chip hidden on phones.
+
+### Verification Commands & Results:
+- `npm run lint`: Passed · `npm run typecheck`: Passed · `npm test`: Passed (65/65, 5 files; 22 new in `tests/unit/clinical.test.ts`) · `npm run build`: Passed
+- End-to-end against a throwaway in-memory MongoDB (synthetic data, `CLINIC_TIMEZONE=Asia/Kolkata`):
+  - Booking: queue tokens 1–4 per doctor; 409 for same slot, 15-min overlap, and patient double-booking; 400 for past time / non-doctor; 404 unknown patient; `?date=` clinic-day filter correct.
+  - Workflow: confirm ✔; COMPLETED without consultation 409; cancelled → confirm 409; other doctor starting/recording/editing/prescribing 403.
+  - Consultations: draft → appointment IN_PROGRESS; duplicate 409; invalid vitals 400; complete → appointment COMPLETED and record locked (409 on edit); cancelled appointment 409.
+  - Prescriptions: 201 with 2 medications; empty list / patient mismatch 400; receptionist list 200, receptionist consultation create/list 403.
+  - Patient portal: only own appointments/consultations/prescriptions (other IDs 404, filters ignored); booking/status/doctor list 403; anonymous 401.
+  - UI walkthrough: receptionist books via slot grid → doctor starts visit from console → records vitals/findings → Complete & Lock → issues prescription → printable view; allergy warning shown for "Penicillin V"; patient profile tabs populated; no console errors; no horizontal overflow at 375 px.
+
+### Known Issues & Limitations:
+- Clinic hours (09:00–17:00, 30-min slots) are constants in `appointment-utils.ts`; the booking grid uses the browser's time zone while `?date=` and queue tokens use `CLINIC_TIMEZONE` — set it to the clinic's zone.
+- Queue tokens are computed at booking time (not transactional); simultaneous bookings for the same doctor/day could share a token.
+- Receptionists see visit logistics but not the prescriptions section on the visit page (prescriptions remain visible to them on the patient profile).
+- `PUT /api/consultations/:id` cannot clear `clinicalNotes` once set on a draft (empty values are ignored).
+
+### Next Owner & Action:
+- Product Owner / Team Lead: review and merge `feature/TASK-DEV3-01-appointments-clinical` into `develop`.
+- QA Engineer: integration tests for the appointment workflow, consultation locking, and patient isolation.
