@@ -275,7 +275,7 @@ No protected shared files (`package.json`, `src/lib/db/mongodb.ts`, `src/lib/aut
   - Fixes from this pass: `PUT` with only `{"email": ""}` now clears the field (was 400); "Registered" timestamp renders in local time (was UTC, off by one day in IST); profile header no longer shifts after closing the edit dialog; read-only subtitle for DOCTOR.
 
 ### Known Issues & Limitations:
-- **Security (Developer 1 scope, not changed here)**: `POST /api/auth/register` is unauthenticated and accepts any `role`, and `/register` exposes a "System Role" selector, so anyone can self-provision an `ADMIN` account. `docs/API_CONTRACTS.md` §2.2 requires ADMIN for provisioning. Needs a PO decision (e.g. self-registration limited to `PATIENT`, staff roles ADMIN-only) and a fix in `TASK-DEV1-01` scope.
+- **Security**: open self-registration of staff roles — resolved in Handoff 006.
 - Home page (`src/app/page.tsx`) team-status cards are hard-coded and out of date; navbar links `/appointments` and `/consultations` return 404 until TASK-DEV3-01.
 - `GET /api/patients` search uses regex partial matching (needed for as-you-type search and patient-ID lookup) rather than the `$text` index; the text index is still created per the data model.
 - `PUT /api/patients/:id` is not yet listed in `docs/API_CONTRACTS.md` §2.3 (it is specified in the TASK-DEV2-01 guide). PO to add it.
@@ -287,3 +287,36 @@ No protected shared files (`package.json`, `src/lib/db/mongodb.ts`, `src/lib/aut
 - **Immediate Follow-up Tasks**:
   - Developer 3: `TASK-DEV3-01` — reference patients via `Patient._id`; use `GET /api/patients?query=` for patient pickers.
   - QA Engineer: `TASK-QA-01` — integration tests for `/api/patients*` (RBAC matrix, 409 duplicates, PATIENT isolation).
+
+---
+
+## Handoff 006: Security Fix — Restrict Staff Account Self-Registration
+
+- **Date**: 2026-10-12
+- **Author**: Developer 2 (security fix in TASK-DEV1-01 files, requested by the human operator)
+- **Related Task**: `TASK-DEV1-01`
+- **Status**: **READY FOR REVIEW** (pushed to `develop` at the operator's request)
+
+### Problem:
+`POST /api/auth/register` accepted any `role` from unauthenticated requests, and `/register` exposed a "System Role" selector, so anyone could create an `ADMIN` account. This contradicted `docs/API_CONTRACTS.md` §2.2.
+
+### Summary of Implementation:
+1. `src/lib/auth/registration-policy.ts` (new): `canProvisionRole(requesterRole, requestedRole)` — anyone may create `PATIENT`; staff roles require `ADMIN`.
+2. `src/app/api/auth/register/route.ts`: reads the session and enforces the policy (`401` anonymous / `403` non-admin) before touching the database.
+3. `src/app/(auth)/register/page.tsx`: role selector and doctor specialization shown only to admins ("Create User Account" mode, form resets after each user); public visitors get patient sign-up with a note that staff accounts are created by an administrator.
+4. `src/components/shared/navbar.tsx`: "Add User" link for `ADMIN`; nav items no longer wrap (compact padding below `lg`, link row scrolls if needed, Health pill shown from `xl`, version badge from `lg`).
+5. `scripts/seed-demo-users.mjs` (new): insert-only seeding of the four demo accounts used by the login quick-fill buttons; refuses to run with `NODE_ENV=production`.
+6. `tests/unit/registration-policy.test.ts` (new): policy matrix tests.
+7. `docs/API_CONTRACTS.md` §2.2 auth rules and bootstrap command documented.
+
+### Verification Commands & Results:
+- `npm run lint`: Passed · `npm run typecheck`: Passed · `npm test`: Passed (43/43, 4 files) · `npm run build`: Passed
+- End-to-end against a throwaway in-memory MongoDB:
+  - Seed script: creates 4 accounts; second run reports all as existing (idempotent).
+  - Anonymous: `ADMIN`/`DOCTOR`/`RECEPTIONIST` → 401; `PATIENT` and no role → 201.
+  - Signed in as DOCTOR/RECEPTIONIST/PATIENT: staff roles → 403, `PATIENT` → 201. Signed in as ADMIN: all roles → 201.
+  - UI: admin creates a DOCTOR with specialization via `/register`; signed-out `/register` has no role selector; header has no horizontal overflow at 375/800/1024/1440 px.
+
+### Next Owner & Action:
+- Product Owner / Team Lead: review; consider an ADR recording the self-registration policy.
+- QA Engineer: add integration tests for `/api/auth/register` authorization.

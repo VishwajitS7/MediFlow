@@ -34,7 +34,7 @@
 
 ## 3. Active Blockers & Known Issues
 
-- **Security (open, TASK-DEV1-01 scope)**: `POST /api/auth/register` lets unauthenticated users create `ADMIN`/`DOCTOR`/`RECEPTIONIST` accounts. Awaiting PO decision on self-registration policy.
+- **Security (resolved 2026-10-12)**: `POST /api/auth/register` previously let unauthenticated users create `ADMIN`/`DOCTOR`/`RECEPTIONIST` accounts. Public sign-up is now restricted to `PATIENT`; staff roles require an `ADMIN` session. Demo accounts are bootstrapped with `scripts/seed-demo-users.mjs`.
 - **Blockers**: None. The repository foundation is established cleanly.
 - **Known Limitations**:
   - MongoDB connection requires a live `MONGODB_URI` environment variable for end-to-end database operations (fallback graceful handling implemented).

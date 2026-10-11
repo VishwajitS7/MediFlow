@@ -297,6 +297,9 @@ npm install
 cp .env.example .env.local
 # (Configure your MONGODB_URI and NEXTAUTH_SECRET in .env.local)
 
+# Seed synthetic demo accounts (admin/doctor/receptionist/patient @mediflow.local)
+node --env-file=.env.local scripts/seed-demo-users.mjs
+
 # Run local development server
 npm run dev
 ```

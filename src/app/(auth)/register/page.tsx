@@ -3,11 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Activity, User, Mail, Lock, Phone, Stethoscope, AlertCircle, CheckCircle, ArrowRight } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Activity, User, Mail, Lock, Phone, Stethoscope, AlertCircle, CheckCircle, ArrowRight, Info } from "lucide-react";
 import { UserRole } from "@/types";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  // Only administrators may provision staff roles; public sign-up always creates a PATIENT account.
+  const isAdmin = session?.user?.role === "ADMIN";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +28,7 @@ export default function RegisterPage() {
     setError(null);
     setSuccess(null);
     setLoading(true);
+    const requestedRole: UserRole = isAdmin ? role : "PATIENT";
 
     try {
       const res = await fetch("/api/auth/register", {
@@ -33,8 +38,8 @@ export default function RegisterPage() {
           name,
           email,
           password,
-          role,
-          specialization: role === "DOCTOR" ? specialization : undefined,
+          role: requestedRole,
+          specialization: requestedRole === "DOCTOR" ? specialization : undefined,
           phone: phone || undefined,
         }),
       });
@@ -43,6 +48,14 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         setError(data.error?.message || "Failed to create account. Please check inputs.");
+        setLoading(false);
+      } else if (isAdmin) {
+        setSuccess(`${data.data?.name ?? "User"} was created as ${requestedRole}.`);
+        setName("");
+        setEmail("");
+        setPassword("");
+        setSpecialization("");
+        setPhone("");
         setLoading(false);
       } else {
         setSuccess("Account registered successfully! Redirecting to sign in...");
@@ -64,8 +77,12 @@ export default function RegisterPage() {
           <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-teal-500/20 mb-1">
             <Activity className="h-6 w-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Register Account</h1>
-          <p className="text-xs text-slate-400">Join MediFlow Smart Clinic platform</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            {isAdmin ? "Create User Account" : "Register Account"}
+          </h1>
+          <p className="text-xs text-slate-400">
+            {isAdmin ? "Provision staff or patient access to MediFlow" : "Create your MediFlow patient portal account"}
+          </p>
         </div>
 
         {/* Status Alerts */}
@@ -95,7 +112,7 @@ export default function RegisterPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Dr. Gregory House"
+                  placeholder={isAdmin ? "Dr. Gregory House" : "Jane Doe"}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 transition"
                 />
               </div>
@@ -110,14 +127,14 @@ export default function RegisterPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="house@mediflow.local"
+                  placeholder={isAdmin ? "house@mediflow.local" : "you@example.com"}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 transition"
                 />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className={isAdmin ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "flex flex-col gap-4"}>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-300">Password</label>
               <div className="relative">
@@ -133,22 +150,24 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-300">System Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-white focus:outline-none focus:border-teal-500 transition"
-              >
-                <option value="DOCTOR">Doctor</option>
-                <option value="RECEPTIONIST">Receptionist</option>
-                <option value="ADMIN">Admin</option>
-                <option value="PATIENT">Patient</option>
-              </select>
-            </div>
+            {isAdmin && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-slate-300">System Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as UserRole)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-sm text-white focus:outline-none focus:border-teal-500 transition"
+                >
+                  <option value="DOCTOR">Doctor</option>
+                  <option value="RECEPTIONIST">Receptionist</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="PATIENT">Patient</option>
+                </select>
+              </div>
+            )}
           </div>
 
-          {role === "DOCTOR" && (
+          {isAdmin && role === "DOCTOR" && (
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-300">Specialization</label>
               <div className="relative">
@@ -194,13 +213,22 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* Footer Link */}
-        <p className="text-center text-xs text-slate-500">
-          Already registered?{" "}
-          <Link href="/login" className="text-teal-400 font-medium hover:underline">
-            Sign In here
-          </Link>
-        </p>
+        {!isAdmin && (
+          <>
+            <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 text-slate-400 text-xs flex items-start gap-2">
+              <Info className="h-4 w-4 shrink-0 text-teal-400" />
+              <span>Clinic staff accounts (doctors, receptionists, administrators) are created by a clinic administrator.</span>
+            </div>
+
+            {/* Footer Link */}
+            <p className="text-center text-xs text-slate-500">
+              Already registered?{" "}
+              <Link href="/login" className="text-teal-400 font-medium hover:underline">
+                Sign In here
+              </Link>
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

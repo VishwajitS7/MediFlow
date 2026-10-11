@@ -76,7 +76,8 @@ All API endpoints in MediFlow adhere to standardized JSON payloads.
 
 #### `POST /api/auth/register`
 - **Purpose**: Provision user credentials.
-- **Auth**: `ADMIN` role required (or self-registration if enabled).
+- **Auth**: Public self-registration may only create `PATIENT` accounts. Creating `ADMIN`, `DOCTOR`, or `RECEPTIONIST` accounts requires a signed-in `ADMIN` session (`401 UNAUTHORIZED` when anonymous, `403 FORBIDDEN` for other roles). Policy: `src/lib/auth/registration-policy.ts`.
+- **Bootstrap**: Seed the demo accounts for local/dev environments with `node --env-file=.env.local scripts/seed-demo-users.mjs`.
 - **Request Body**:
 ```json
 {
