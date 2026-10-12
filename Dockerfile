@@ -53,7 +53,10 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # Copy static assets and standalone server artifacts from builder
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Set runtime prerender cache permissions
+RUN mkdir .next && chown nextjs:nodejs .next
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
@@ -64,8 +67,8 @@ USER nextjs
 
 EXPOSE 3000
 
-# Health check using Node.js to query internal /api/health endpoint
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {if (r.statusCode !== 200) process.exit(1)}).on('error', () => process.exit(1))"
+# Health check using Node.js to query internal /api/health endpoint with dynamic port resolution
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "require('http').get(\`http://localhost:\${process.env.PORT || 3000}/api/health\`, (r) => {if (r.statusCode !== 200) process.exit(1)}).on('error', () => process.exit(1))"
 
 CMD ["node", "server.js"]
