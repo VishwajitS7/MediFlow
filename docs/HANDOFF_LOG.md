@@ -403,3 +403,58 @@ No protected shared files (`package.json`, `src/lib/db/mongodb.ts`, `src/lib/aut
 - `npm run build`: Passed (Turbopack production build succeeded)
 - Database verification: `vishu3110@gmail.com` now links directly to `MED-2026-00002` and renders in the patient directory.
 
+---
+
+## Handoff 009: TASK-K8S-01 — Kubernetes Deployment, Service, Ingress & Probe Manifests
+
+- **Date**: 2026-10-12
+- **Author**: Kubernetes Engineer
+- **Task ID**: `TASK-K8S-01`
+- **Status**: **READY FOR REVIEW**
+- **Target Branch**: `develop`
+- **Working Branch**: `feature/TASK-K8S-01-k8s-manifests`
+
+### Summary of Implementation:
+1. **Isolated Namespace (`k8s/namespace.yaml`)**:
+   - Created `mediflow` dedicated namespace with standard Kubernetes labels.
+2. **Environment & Secrets Decoupling**:
+   - `k8s/configmap.yaml`: `NODE_ENV`, `PORT`, `HOSTNAME`, `NEXT_TELEMETRY_DISABLED`, `NEXTAUTH_URL`, `CLINIC_TIMEZONE`.
+   - `k8s/secret.yaml`: Secrets template for `MONGODB_URI` and `NEXTAUTH_SECRET` (minimum 32-char key).
+3. **High-Availability Deployment (`k8s/deployment.yaml`)**:
+   - 2 initial replicas with `RollingUpdate` strategy (`maxSurge: 1`, `maxUnavailable: 0`).
+   - Security hardening: non-root execution (`runAsNonRoot: true`, UID/GID 1001 matching Docker Alpine runner), `allowPrivilegeEscalation: false`, dropped all capabilities.
+   - Resource governance: requests (100m CPU, 256Mi RAM), limits (500m CPU, 512Mi RAM).
+   - 3-tier health checks: `startupProbe`, `readinessProbe`, and `livenessProbe` pointing to `/api/health`.
+4. **Service & Ingress Routing**:
+   - `k8s/service.yaml`: `ClusterIP` exposing service port 80 to container port 3000.
+   - `k8s/ingress.yaml`: NGINX ingress routing `mediflow.local` with tuned timeouts and proxy headers.
+5. **Autoscaling & Bundling**:
+   - `k8s/hpa.yaml`: `HorizontalPodAutoscaler` scaling from 2 to 10 pods on CPU (70%) and Memory (80%).
+   - `k8s/kustomization.yaml`: Kustomize composition binding all manifests with standard labels.
+6. **Documentation (`docs/K8S_DEPLOYMENT.md`)**:
+   - Authored complete architecture guide, security specifications, deployment commands (Kustomize and manual), port-forwarding instructions, and troubleshooting/rollback runbook.
+
+### Files Created / Modified:
+- `k8s/namespace.yaml` (Created)
+- `k8s/configmap.yaml` (Created)
+- `k8s/secret.yaml` (Created)
+- `k8s/deployment.yaml` (Created)
+- `k8s/service.yaml` (Created)
+- `k8s/ingress.yaml` (Created)
+- `k8s/hpa.yaml` (Created)
+- `k8s/kustomization.yaml` (Created)
+- `docs/K8S_DEPLOYMENT.md` (Created)
+- `docs/TEAM_TASKS.md` (Updated status to READY FOR REVIEW)
+- `docs/PROJECT_STATUS.md` (Updated status to READY FOR REVIEW)
+- `docs/HANDOFF_LOG.md` (Updated)
+
+### Verification Commands & Results:
+- `kubectl kustomize k8s`: Passed cleanly, validating manifest syntax, schemas, and resource graph.
+- `npm run lint`: Passed (0 errors, 0 warnings).
+- `npm run typecheck`: Passed (`tsc --noEmit` exit code 0).
+- `npm test`: Passed (65/65 tests passing across 5 test suites).
+
+### Next Owner & Action:
+- Product Owner / Team Lead: review and merge PR into `develop`.
+- DevOps/SRE Engineer: integrate Prometheus/Grafana alerts with deployment health metrics.
+

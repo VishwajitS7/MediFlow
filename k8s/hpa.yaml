@@ -1,0 +1,33 @@
+# ==============================================================================
+# MediFlow Kubernetes Manifest: HorizontalPodAutoscaler (HPA)
+# Role: Kubernetes Engineer (TASK-K8S-01)
+# ==============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mediflow-hpa
+  namespace: mediflow
+  labels:
+    app.kubernetes.io/name: mediflow
+    app.kubernetes.io/component: autoscaler
+    app.kubernetes.io/part-of: mediflow-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mediflow-web
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

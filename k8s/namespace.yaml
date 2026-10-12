@@ -1,0 +1,12 @@
+# ==============================================================================
+# MediFlow Kubernetes Manifest: Namespace
+# Role: Kubernetes Engineer (TASK-K8S-01)
+# ==============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mediflow
+  labels:
+    app.kubernetes.io/name: mediflow
+    app.kubernetes.io/part-of: mediflow-system
+    app.kubernetes.io/managed-by: kubectl
