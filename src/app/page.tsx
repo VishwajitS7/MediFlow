@@ -1,101 +1,494 @@
-import { Shield, Users, Calendar, Stethoscope, FileText, CheckCircle2 } from "lucide-react";
+import { Suspense } from "react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth/auth-options";
+import { connectToDatabase } from "@/lib/db/mongodb";
+import { User } from "@/models/User";
+import { Patient } from "@/models/Patient";
+import { Appointment } from "@/models/Appointment";
+import { Consultation } from "@/models/Consultation";
+import { Prescription } from "@/models/Prescription";
+import { PublicLanding } from "@/features/dashboard/public-landing";
+import { DoctorDashboard } from "@/features/dashboard/doctor-dashboard";
+import { ReceptionistDashboard } from "@/features/dashboard/receptionist-dashboard";
+import { AdminDashboard } from "@/features/dashboard/admin-dashboard";
+import { PatientDashboard } from "@/features/dashboard/patient-dashboard";
+import type {
+  DoctorDashboardData,
+  ReceptionistDashboardData,
+  AdminDashboardData,
+  PatientDashboardData,
+  SerializedAppointment,
+  SerializedPatient,
+  SerializedPrescription,
+  SerializedConsultation,
+} from "@/features/dashboard/types";
+import { Types } from "mongoose";
+
+function DashboardSkeleton() {
+  return (
+    <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-8 w-full animate-pulse">
+      <div className="h-24 bg-slate-900/60 rounded-3xl border border-slate-800" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="h-24 bg-slate-900/60 rounded-2xl border border-slate-800" />
+        <div className="h-24 bg-slate-900/60 rounded-2xl border border-slate-800" />
+        <div className="h-24 bg-slate-900/60 rounded-2xl border border-slate-800" />
+        <div className="h-24 bg-slate-900/60 rounded-2xl border border-slate-800" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 h-80 bg-slate-900/60 rounded-2xl border border-slate-800" />
+        <div className="h-80 bg-slate-900/60 rounded-2xl border border-slate-800" />
+      </div>
+    </div>
+  );
+}
+
+function getTodayBounds() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
+async function loadDoctorDashboard(
+  userId: string,
+  userName: string,
+  start: Date,
+  end: Date
+): Promise<DoctorDashboardData> {
+  const fallback: DoctorDashboardData = {
+    doctorName: userName,
+    todayAppointmentsCount: 0,
+    waitingCount: 0,
+    inProgressCount: 0,
+    completedTodayCount: 0,
+    totalPrescriptionsCount: 0,
+    queueAppointments: [],
+    recentConsultations: [],
+    recentPrescriptions: [],
+  };
+
+  try {
+    await connectToDatabase();
+    const doctorObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null;
+
+    const [appointments, consultations, prescriptions, doctorDoc] = await Promise.all([
+      doctorObjectId
+        ? Appointment.find({ doctorId: doctorObjectId, dateTime: { $gte: start, $lte: end } })
+            .sort({ dateTime: 1 })
+            .lean()
+        : [],
+      doctorObjectId
+        ? Consultation.find({ doctorId: doctorObjectId }).sort({ createdAt: -1 }).limit(5).lean()
+        : [],
+      doctorObjectId
+        ? Prescription.find({ doctorId: doctorObjectId }).sort({ createdAt: -1 }).limit(5).lean()
+        : [],
+      doctorObjectId ? User.findById(doctorObjectId).select({ specialization: 1 }).lean() : null,
+    ]);
+
+    const patientIds = [
+      ...new Set([
+        ...appointments.map((a) => a.patientId.toString()),
+        ...consultations.map((c) => c.patientId.toString()),
+        ...prescriptions.map((p) => p.patientId.toString()),
+      ]),
+    ];
+
+    const patientDocs = patientIds.length
+      ? await Patient.find({ _id: { $in: patientIds } })
+          .select({ fullName: 1, patientId: 1 })
+          .lean()
+      : [];
+
+    const patientMap = new Map(patientDocs.map((p) => [p._id.toString(), p]));
+
+    const serializedQueue: SerializedAppointment[] = appointments.map((a) => {
+      const p = patientMap.get(a.patientId.toString());
+      return {
+        _id: a._id.toString(),
+        patientId: a.patientId.toString(),
+        patientName: p?.fullName || "Patient",
+        patientClinicId: p?.patientId,
+        doctorId: userId,
+        doctorName: userName,
+        dateTime: a.dateTime.toISOString(),
+        status: a.status as SerializedAppointment["status"],
+        reason: a.reason,
+        queueNumber: a.queueNumber,
+        notes: a.notes,
+      };
+    });
+
+    const serializedConsultations: SerializedConsultation[] = consultations.map((c) => {
+      const p = patientMap.get(c.patientId.toString());
+      return {
+        _id: c._id.toString(),
+        appointmentId: c.appointmentId.toString(),
+        patientId: c.patientId.toString(),
+        patientName: p?.fullName || "Patient",
+        doctorId: userId,
+        doctorName: userName,
+        chiefComplaint: c.chiefComplaint,
+        diagnosis: c.diagnosis,
+        status: c.status as "DRAFT" | "COMPLETED",
+        createdAt: c.createdAt.toISOString(),
+      };
+    });
+
+    const serializedPrescriptions: SerializedPrescription[] = prescriptions.map((p) => {
+      const pt = patientMap.get(p.patientId.toString());
+      const summary = (p.medications || []).map((m: { name: string }) => m.name).join(", ");
+      return {
+        _id: p._id.toString(),
+        consultationId: p.consultationId.toString(),
+        patientId: p.patientId.toString(),
+        patientName: pt?.fullName || "Patient",
+        doctorId: userId,
+        doctorName: userName,
+        medicationsCount: (p.medications || []).length,
+        medicationsSummary: summary || "Prescribed medications",
+        createdAt: p.createdAt.toISOString(),
+      };
+    });
+
+    return {
+      doctorName: userName,
+      specialization: (doctorDoc as { specialization?: string })?.specialization,
+      todayAppointmentsCount: appointments.length,
+      waitingCount: appointments.filter((a) => a.status === "CONFIRMED" || a.status === "SCHEDULED").length,
+      inProgressCount: appointments.filter((a) => a.status === "IN_PROGRESS").length,
+      completedTodayCount: appointments.filter((a) => a.status === "COMPLETED").length,
+      totalPrescriptionsCount: prescriptions.length,
+      queueAppointments: serializedQueue,
+      recentConsultations: serializedConsultations,
+      recentPrescriptions: serializedPrescriptions,
+    };
+  } catch (err) {
+    console.error("Doctor dashboard loader failed:", err);
+    return fallback;
+  }
+}
+
+async function loadReceptionistDashboard(
+  userName: string,
+  start: Date,
+  end: Date
+): Promise<ReceptionistDashboardData> {
+  const fallback: ReceptionistDashboardData = {
+    receptionistName: userName,
+    totalPatientsCount: 0,
+    todayAppointmentsCount: 0,
+    waitingQueueCount: 0,
+    activeDoctorsCount: 0,
+    todayAppointments: [],
+    recentPatients: [],
+    activeDoctors: [],
+  };
+
+  try {
+    await connectToDatabase();
+    const [totalPatients, todayApts, recentPatientsDocs, activeDoctorDocs] = await Promise.all([
+      Patient.countDocuments(),
+      Appointment.find({ dateTime: { $gte: start, $lte: end } }).sort({ dateTime: 1 }).lean(),
+      Patient.find().sort({ createdAt: -1 }).limit(6).lean(),
+      User.find({ role: "DOCTOR", isActive: true }).select({ name: 1, specialization: 1 }).lean(),
+    ]);
+
+    const participantIds = [
+      ...new Set([
+        ...todayApts.map((a) => a.patientId.toString()),
+        ...todayApts.map((a) => a.doctorId.toString()),
+      ]),
+    ];
+
+    const [pDocs, dDocs] = await Promise.all([
+      Patient.find({ _id: { $in: participantIds } }).select({ fullName: 1, patientId: 1 }).lean(),
+      User.find({ _id: { $in: participantIds } }).select({ name: 1 }).lean(),
+    ]);
+
+    const pMap = new Map(pDocs.map((p) => [p._id.toString(), p]));
+    const dMap = new Map(dDocs.map((d) => [d._id.toString(), d]));
+
+    const serializedAppointments: SerializedAppointment[] = todayApts.map((a) => {
+      const pt = pMap.get(a.patientId.toString());
+      const doc = dMap.get(a.doctorId.toString());
+      return {
+        _id: a._id.toString(),
+        patientId: a.patientId.toString(),
+        patientName: pt?.fullName || "Patient",
+        patientClinicId: pt?.patientId,
+        doctorId: a.doctorId.toString(),
+        doctorName: doc?.name || "Doctor",
+        dateTime: a.dateTime.toISOString(),
+        status: a.status as SerializedAppointment["status"],
+        reason: a.reason,
+        queueNumber: a.queueNumber,
+        notes: a.notes,
+      };
+    });
+
+    const serializedPatients: SerializedPatient[] = recentPatientsDocs.map((p) => ({
+      _id: p._id.toString(),
+      patientId: p.patientId,
+      fullName: p.fullName,
+      dateOfBirth: p.dateOfBirth.toISOString(),
+      gender: p.gender,
+      phone: p.phone,
+      email: p.email,
+      bloodGroup: p.bloodGroup,
+      allergies: p.allergies ?? [],
+      createdAt: p.createdAt.toISOString(),
+    }));
+
+    return {
+      receptionistName: userName,
+      totalPatientsCount: totalPatients,
+      todayAppointmentsCount: todayApts.length,
+      waitingQueueCount: todayApts.filter((a) => a.status === "CONFIRMED" || a.status === "SCHEDULED").length,
+      activeDoctorsCount: activeDoctorDocs.length,
+      todayAppointments: serializedAppointments,
+      recentPatients: serializedPatients,
+      activeDoctors: activeDoctorDocs.map((d) => ({
+        _id: d._id.toString(),
+        name: d.name,
+        specialization: d.specialization,
+      })),
+    };
+  } catch (err) {
+    console.error("Receptionist dashboard loader failed:", err);
+    return fallback;
+  }
+}
+
+async function loadAdminDashboard(
+  userName: string,
+  start: Date,
+  end: Date
+): Promise<AdminDashboardData> {
+  const fallback: AdminDashboardData = {
+    adminName: userName,
+    totalPatients: 0,
+    totalDoctors: 0,
+    totalReceptionists: 0,
+    todayAppointmentsCount: 0,
+    totalConsultations: 0,
+    totalPrescriptions: 0,
+    recentPatients: [],
+    todayAppointments: [],
+    staffList: [],
+    systemStatus: { database: "Offline", uptime: 0, version: "0.1.0" },
+  };
+
+  try {
+    await connectToDatabase();
+    const [
+      totalPatients,
+      totalDoctors,
+      totalReceptionists,
+      todayAptsCount,
+      totalConsultations,
+      totalPrescriptions,
+      recentPatientsDocs,
+      staffListDocs,
+    ] = await Promise.all([
+      Patient.countDocuments(),
+      User.countDocuments({ role: "DOCTOR" }),
+      User.countDocuments({ role: "RECEPTIONIST" }),
+      Appointment.countDocuments({ dateTime: { $gte: start, $lte: end } }),
+      Consultation.countDocuments(),
+      Prescription.countDocuments(),
+      Patient.find().sort({ createdAt: -1 }).limit(5).lean(),
+      User.find({ role: { $in: ["ADMIN", "DOCTOR", "RECEPTIONIST"] } })
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
+    ]);
+
+    const serializedPatients: SerializedPatient[] = recentPatientsDocs.map((p) => ({
+      _id: p._id.toString(),
+      patientId: p.patientId,
+      fullName: p.fullName,
+      dateOfBirth: p.dateOfBirth.toISOString(),
+      gender: p.gender,
+      phone: p.phone,
+      email: p.email,
+      bloodGroup: p.bloodGroup,
+      allergies: p.allergies ?? [],
+      createdAt: p.createdAt.toISOString(),
+    }));
+
+    return {
+      adminName: userName,
+      totalPatients,
+      totalDoctors,
+      totalReceptionists,
+      todayAppointmentsCount: todayAptsCount,
+      totalConsultations,
+      totalPrescriptions,
+      recentPatients: serializedPatients,
+      todayAppointments: [],
+      staffList: staffListDocs.map((u) => ({
+        _id: u._id.toString(),
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        specialization: u.specialization,
+        createdAt: u.createdAt.toISOString(),
+      })),
+      systemStatus: {
+        database: "MongoDB Connected",
+        uptime: process.uptime(),
+        version: "0.1.0",
+      },
+    };
+  } catch (err) {
+    console.error("Admin dashboard loader failed:", err);
+    return fallback;
+  }
+}
+
+async function loadPatientDashboard(
+  userId: string,
+  userEmail: string | undefined | null,
+  userName: string
+): Promise<PatientDashboardData> {
+  const fallback: PatientDashboardData = {
+    patientName: userName,
+    allergies: [],
+    upcomingAppointments: [],
+    pastAppointments: [],
+    recentPrescriptions: [],
+  };
+
+  try {
+    await connectToDatabase();
+    const patientDoc = await Patient.findOne({
+      $or: [
+        ...(Types.ObjectId.isValid(userId) ? [{ userId: new Types.ObjectId(userId) }] : []),
+        ...(userEmail ? [{ email: userEmail.toLowerCase() }] : []),
+      ],
+    }).lean();
+
+    if (!patientDoc) {
+      return fallback;
+    }
+
+    const patientObjectId = patientDoc._id;
+    const now = new Date();
+
+    const [upcomingApts, pastApts, prescriptions] = await Promise.all([
+      Appointment.find({ patientId: patientObjectId, dateTime: { $gte: now } })
+        .sort({ dateTime: 1 })
+        .limit(5)
+        .lean(),
+      Appointment.find({ patientId: patientObjectId, dateTime: { $lt: now } })
+        .sort({ dateTime: -1 })
+        .limit(5)
+        .lean(),
+      Prescription.find({ patientId: patientObjectId }).sort({ createdAt: -1 }).limit(5).lean(),
+    ]);
+
+    const doctorIds = [
+      ...new Set([
+        ...upcomingApts.map((a) => a.doctorId.toString()),
+        ...pastApts.map((a) => a.doctorId.toString()),
+        ...prescriptions.map((p) => p.doctorId.toString()),
+      ]),
+    ];
+
+    const doctorDocs = doctorIds.length
+      ? await User.find({ _id: { $in: doctorIds } }).select({ name: 1 }).lean()
+      : [];
+
+    const docMap = new Map(doctorDocs.map((d) => [d._id.toString(), d.name]));
+
+    const serializeApt = (a: (typeof upcomingApts)[number]): SerializedAppointment => ({
+      _id: a._id.toString(),
+      patientId: patientObjectId.toString(),
+      patientName: patientDoc.fullName,
+      patientClinicId: patientDoc.patientId,
+      doctorId: a.doctorId.toString(),
+      doctorName: docMap.get(a.doctorId.toString()) || "Doctor",
+      dateTime: a.dateTime.toISOString(),
+      status: a.status as SerializedAppointment["status"],
+      reason: a.reason,
+      queueNumber: a.queueNumber,
+      notes: a.notes,
+    });
+
+    const serializedPrescriptions: SerializedPrescription[] = prescriptions.map((p) => {
+      const docName = docMap.get(p.doctorId.toString()) || "Doctor";
+      const summary = (p.medications || []).map((m: { name: string }) => m.name).join(", ");
+      return {
+        _id: p._id.toString(),
+        consultationId: p.consultationId.toString(),
+        patientId: patientObjectId.toString(),
+        patientName: patientDoc.fullName,
+        doctorId: p.doctorId.toString(),
+        doctorName: docName,
+        medicationsCount: (p.medications || []).length,
+        medicationsSummary: summary || "Prescribed medications",
+        createdAt: p.createdAt.toISOString(),
+      };
+    });
+
+    return {
+      patientName: patientDoc.fullName || userName,
+      patientClinicId: patientDoc.patientId,
+      allergies: patientDoc.allergies ?? [],
+      bloodGroup: patientDoc.bloodGroup,
+      emergencyContact: patientDoc.emergencyContact,
+      upcomingAppointments: upcomingApts.map(serializeApt),
+      pastAppointments: pastApts.map(serializeApt),
+      recentPrescriptions: serializedPrescriptions,
+    };
+  } catch (err) {
+    console.error("Patient dashboard loader failed:", err);
+    return fallback;
+  }
+}
+
+async function RoleDashboardRouter() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return <PublicLanding />;
+  }
+
+  const role = session.user.role;
+  const userId = session.user.id;
+  const userName = session.user.name || session.user.email || "User";
+  const userEmail = session.user.email;
+  const { start, end } = getTodayBounds();
+
+  if (role === "DOCTOR") {
+    const data = await loadDoctorDashboard(userId, userName, start, end);
+    return <DoctorDashboard data={data} />;
+  }
+
+  if (role === "RECEPTIONIST") {
+    const data = await loadReceptionistDashboard(userName, start, end);
+    return <ReceptionistDashboard data={data} />;
+  }
+
+  if (role === "ADMIN") {
+    const data = await loadAdminDashboard(userName, start, end);
+    return <AdminDashboard data={data} />;
+  }
+
+  if (role === "PATIENT") {
+    const data = await loadPatientDashboard(userId, userEmail, userName);
+    return <PatientDashboard data={data} />;
+  }
+
+  return <PublicLanding />;
+}
 
 export default function Home() {
-  const teamRoles = [
-    { title: "Product Owner / Team Lead", desc: "Architecture & Integration Owner", id: "TASK-PO-01", status: "Complete" },
-    { title: "Developer 1", desc: "Auth.js, RBAC & Navigation Shell", id: "TASK-DEV1-01", status: "Ready for Review" },
-    { title: "Developer 2", desc: "Patient Registration & Directory", id: "TASK-DEV2-01", status: "Ready to Start" },
-    { title: "Developer 3", desc: "Appointments, EMR & Prescriptions", id: "TASK-DEV3-01", status: "Planned" },
-    { title: "QA Engineer", desc: "Test Strategy, Vitest & E2E Suites", id: "TASK-QA-01", status: "Planned" },
-    { title: "Git/GitHub Engineer", desc: "GitFlow & Collaboration Standards", id: "TASK-GIT-01", status: "Planned" },
-    { title: "Jenkins Engineer", desc: "CI/CD Pipeline Automation", id: "TASK-CI-01", status: "Planned" },
-    { title: "Docker Engineer", desc: "Multi-Stage Containerization", id: "TASK-DOCKER-01", status: "Planned" },
-    { title: "Kubernetes Engineer", desc: "Deployments, Services & Ingress", id: "TASK-K8S-01", status: "Planned" },
-    { title: "DevOps/SRE Engineer", desc: "Observability, Telemetry & Health", id: "TASK-SRE-01", status: "Planned" },
-  ];
-
   return (
-    <div className="flex-1 bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-teal-500 selection:text-slate-950">
-      {/* Hero Section */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-12 flex flex-col gap-12 w-full">
-        <div className="flex flex-col items-center text-center max-w-3xl mx-auto gap-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs font-semibold text-teal-400">
-            <CheckCircle2 className="h-3.5 w-3.5" /> Baseline Scaffold Initialized & Approved
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            Smart Clinic Management <span className="bg-gradient-to-r from-teal-400 to-indigo-400 bg-clip-text text-transparent">Platform</span>
-          </h1>
-          <p className="text-slate-400 text-base sm:text-lg leading-relaxed">
-            Engineered by a collaborative 10-member DevOps engineering team. MediFlow combines Next.js App Router, TypeScript, MongoDB Atlas, and automated CI/CD container delivery.
-          </p>
-        </div>
-
-        {/* Feature Capabilities Preview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/80 flex flex-col gap-2">
-            <Shield className="h-6 w-6 text-teal-400" />
-            <h3 className="font-semibold text-white">RBAC Authentication</h3>
-            <p className="text-xs text-slate-400">Auth.js credential flows for Admins, Doctors, Receptionists, and Patients.</p>
-          </div>
-          <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/80 flex flex-col gap-2">
-            <Users className="h-6 w-6 text-indigo-400" />
-            <h3 className="font-semibold text-white">Patient Intake & EMR</h3>
-            <p className="text-xs text-slate-400">Comprehensive patient records, medical histories, allergies, and quick search.</p>
-          </div>
-          <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/80 flex flex-col gap-2">
-            <Calendar className="h-6 w-6 text-emerald-400" />
-            <h3 className="font-semibold text-white">Scheduling & Queue</h3>
-            <p className="text-xs text-slate-400">Outpatient slot booking, appointment lifecycle states, and waiting room queue.</p>
-          </div>
-          <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/80 flex flex-col gap-2">
-            <Stethoscope className="h-6 w-6 text-cyan-400" />
-            <h3 className="font-semibold text-white">Clinical & Prescriptions</h3>
-            <p className="text-xs text-slate-400">Structured vitals, doctor diagnoses, and digital prescription issuance.</p>
-          </div>
-        </div>
-
-        {/* 10-Member Team Matrix */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-teal-400" />
-              <h2 className="text-xl font-bold text-white">10-Member Engineering Team Alignment</h2>
-            </div>
-            <span className="text-xs text-slate-400">Source: docs/TEAM_TASKS.md</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-            {teamRoles.map((role) => (
-              <div
-                key={role.id}
-                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition flex flex-col justify-between gap-3"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-mono text-teal-400 font-semibold">{role.id}</span>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                        role.status === "Ready for Review"
-                          ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
-                          : "bg-slate-800 text-slate-400"
-                      }`}
-                    >
-                      {role.status}
-                    </span>
-                  </div>
-                  <h4 className="font-medium text-sm text-white">{role.title}</h4>
-                  <p className="text-xs text-slate-400 mt-1">{role.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-        MediFlow Smart Clinic Platform • Internal DevOps Team Collaboration Baseline
-      </footer>
-    </div>
+    <Suspense fallback={<DashboardSkeleton />}>
+      <RoleDashboardRouter />
+    </Suspense>
   );
 }
