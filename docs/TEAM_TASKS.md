@@ -18,7 +18,7 @@
 | **TASK-QA-01** | QA Engineer | Test Strategy, Vitest Suite Scaffolding & E2E Test Suite | TASK-PO-01 | **READY TO START** | `feature/TASK-QA-01-test-suite` |
 | **TASK-CI-01** | Jenkins Engineer | Declarative Jenkinsfile Pipeline (Lint, Typecheck, Test, Build) | TASK-PO-01 | **READY TO START** | `feature/TASK-CI-01-jenkins-pipeline` |
 | **TASK-DOCKER-01** | Docker Engineer | Multi-Stage Dockerfile & Container Build Optimization | TASK-PO-01 | **READY TO START** | `feature/TASK-DOCKER-01-dockerfile` |
-| **TASK-K8S-01** | Kubernetes Engineer | Kubernetes Deployment, Service, ConfigMap & Probe Manifests | TASK-DOCKER-01 | **BLOCKED** | `feature/TASK-K8S-01-k8s-manifests` |
+| **TASK-K8S-01** | Kubernetes Engineer | Kubernetes Deployment, Service, ConfigMap & Probe Manifests | TASK-DOCKER-01 | **READY FOR REVIEW** | `feature/TASK-K8S-01-k8s-manifests` |
 | **TASK-SRE-01** | DevOps/SRE Engineer | Observability, Health Endpoints, Telemetry & SRE Runbooks | TASK-PO-01 | **READY TO START** | `feature/TASK-SRE-01-health-observability` |
 
 ---
