@@ -367,3 +367,39 @@ No protected shared files (`package.json`, `src/lib/db/mongodb.ts`, `src/lib/aut
 ### Next Owner & Action:
 - Product Owner / Team Lead: review and merge `feature/TASK-DEV3-01-appointments-clinical` into `develop`.
 - QA Engineer: integration tests for the appointment workflow, consultation locking, and patient isolation.
+
+---
+
+## Handoff 008: TASK-PO-02 — Auth-Patient Dual Synchronization & Portal Auto-Provisioning
+
+- **Date**: 2026-10-12
+- **Author**: Product Owner / Team Lead
+- **Task ID**: `TASK-PO-02`
+- **Status**: **READY FOR REVIEW**
+- **Target Branch**: `develop`
+- **Working Branch**: `fix/TASK-PO-02-auth-patient-sync`
+
+### Summary of Implementation:
+1. **Patient Self-Registration Correlation (`POST /api/auth/register`)**:
+   - Automatically generates a sequential `MED-YYYY-XXXXX` patient ID via `generatePatientId()` whenever a user registers with role `PATIENT`.
+   - Creates a linked `Patient` document in the `patients` collection with `userId: newUser._id`, establishing bidirectional referential integrity.
+   - If a clinical chart already exists matching the email or phone number, links the existing record rather than generating a duplicate.
+2. **Staff Registration Portal Provisioning (`POST /api/patients`)**:
+   - When an Admin or Receptionist registers a patient at the front desk with an email address, automatically provisions a portal `User` account (`role: 'PATIENT'`, default password hash).
+   - Links `Patient.userId` immediately, allowing the patient to sign in to the portal without manual administrator intervention.
+3. **Legacy Account Synchronization (`scripts/sync-patient-accounts.mjs`)**:
+   - Built and executed a synchronization utility ensuring all existing `PATIENT` users (including `vishu3110@gmail.com` and `patient@mediflow.local`) receive corresponding medical charts in the directory (`MED-2026-00001` and `MED-2026-00002`).
+
+### Files Created / Modified:
+- `src/app/api/auth/register/route.ts` (Modified: added clinical patient chart auto-creation and linking)
+- `src/app/api/patients/route.ts` (Modified: added portal user provisioning when staff registers a patient with email)
+- `scripts/sync-patient-accounts.mjs` (Created: synchronizer script for legacy accounts)
+- `docs/HANDOFF_LOG.md` (Updated)
+
+### Verification Commands & Results:
+- `npm run lint`: Passed (0 errors, 0 warnings)
+- `npm run typecheck`: Passed (`tsc --noEmit` exit 0)
+- `npm test`: Passed (65/65 tests across 5 test suites)
+- `npm run build`: Passed (Turbopack production build succeeded)
+- Database verification: `vishu3110@gmail.com` now links directly to `MED-2026-00002` and renders in the patient directory.
+

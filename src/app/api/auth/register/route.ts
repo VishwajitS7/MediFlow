@@ -5,6 +5,9 @@ import { authOptions } from "@/lib/auth/auth-options";
 import { canProvisionRole } from "@/lib/auth/registration-policy";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { User } from "@/models/User";
+import { Patient } from "@/models/Patient";
+import { generatePatientId } from "@/features/patients/server/patient-api";
+import { isMongoDuplicateKeyError } from "@/lib/api/http";
 import { registerSchema } from "@/lib/validation/auth";
 import { ApiResponse, IUser } from "@/types";
 
@@ -71,6 +74,63 @@ export async function POST(req: NextRequest) {
       phone,
       isActive: true,
     });
+
+    // When a PATIENT registers, automatically correlate or link their clinical Patient chart
+    if (newUser.role === "PATIENT") {
+      try {
+        const matchCriteria: Record<string, unknown>[] = [{ email: email.toLowerCase() }];
+        if (phone) matchCriteria.push({ phone });
+
+        const existingPatient = await Patient.findOne({ $or: matchCriteria });
+        if (existingPatient) {
+          if (!existingPatient.userId) {
+            existingPatient.userId = newUser._id;
+          }
+          if (!existingPatient.email) {
+            existingPatient.email = email.toLowerCase();
+          }
+          if (phone && (!existingPatient.phone || existingPatient.phone === "Not provided")) {
+            existingPatient.phone = phone;
+          }
+          await existingPatient.save();
+        } else {
+          for (let attempt = 1; attempt <= 5; attempt++) {
+            const patientId = await generatePatientId();
+            try {
+              await Patient.create({
+                patientId,
+                fullName: name,
+                email: email.toLowerCase(),
+                phone: phone || "+1-555-0100",
+                dateOfBirth: new Date("2000-01-01"),
+                gender: "OTHER",
+                emergencyContact: {
+                  name: "Self",
+                  relationship: "Self",
+                  phone: phone || "+1-555-0100",
+                },
+                allergies: [],
+                userId: newUser._id,
+              });
+              break;
+            } catch (err) {
+              const isCollision =
+                isMongoDuplicateKeyError(err) &&
+                typeof err === "object" &&
+                err !== null &&
+                "keyPattern" in err &&
+                Boolean((err as { keyPattern?: Record<string, unknown> }).keyPattern?.patientId);
+              if (!isCollision || attempt === 5) {
+                console.error("Auto-provision patient record error:", err);
+                break;
+              }
+            }
+          }
+        }
+      } catch (syncError) {
+        console.error("Failed to synchronize patient chart on registration:", syncError);
+      }
+    }
 
     const userPayload: IUser = {
       _id: newUser._id.toString(),
