@@ -1,0 +1,34 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js build and cache output
+.next
+out
+
+# Environment variables and secrets
+.env*
+!.env.example
+
+# Testing and coverage
+coverage
+tests
+vitest.config.ts
+
+# Documentation and IDE
+docs
+.vscode
+.idea
+*.md
+!README.md
+
+# CI / CD temporary files
+Jenkinsfile
+.github
