@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server";
+import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { requireRole } from "@/lib/auth/rbac";
 import { Patient } from "@/models/Patient";
+import { User } from "@/models/User";
 import { createPatientSchema, patientListQuerySchema } from "@/lib/validation/patient";
 import { escapeRegex } from "@/features/patients/patient-utils";
 import {
@@ -98,6 +100,34 @@ export async function POST(req: NextRequest) {
       const patientId = await generatePatientId();
       try {
         const created = await Patient.create({ ...input, patientId });
+
+        // If email was provided, auto-link or provision a portal User account so the patient can log in
+        if (input.email) {
+          try {
+            const normalizedEmail = input.email.toLowerCase();
+            const existingUser = await User.findOne({ email: normalizedEmail });
+            if (existingUser) {
+              created.userId = existingUser._id;
+              await created.save();
+            } else {
+              const salt = await bcrypt.genSalt(10);
+              const passwordHash = await bcrypt.hash("Password123!", salt);
+              const portalUser = await User.create({
+                name: input.fullName,
+                email: normalizedEmail,
+                passwordHash,
+                role: "PATIENT",
+                phone: input.phone,
+                isActive: true,
+              });
+              created.userId = portalUser._id;
+              await created.save();
+            }
+          } catch (userProvisionError) {
+            console.error("Failed to provision portal user for patient:", userProvisionError);
+          }
+        }
+
         return jsonSuccess<IPatient>(serializePatient(created.toObject()), 201);
       } catch (error) {
         const isIdCollision =
