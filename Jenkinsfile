@@ -31,36 +31,65 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo '=== Stage 2: Installing npm dependencies with clean state ==='
-                // For Windows agents use bat, for Linux/Unix use sh
-                bat 'npm ci'
+                script {
+                    if (isUnix()) {
+                        sh 'npm ci'
+                    } else {
+                        bat 'npm ci'
+                    }
+                }
             }
         }
 
         stage('Code Quality (Lint)') {
             steps {
                 echo '=== Stage 3: Running ESLint code verification ==='
-                bat 'npm run lint'
+                script {
+                    if (isUnix()) {
+                        sh 'npm run lint'
+                    } else {
+                        bat 'npm run lint'
+                    }
+                }
             }
         }
 
         stage('Strict Typecheck') {
             steps {
                 echo '=== Stage 4: Verifying TypeScript compiler types ==='
-                bat 'npm run typecheck'
+                script {
+                    if (isUnix()) {
+                        sh 'npm run typecheck'
+                    } else {
+                        bat 'npm run typecheck'
+                    }
+                }
             }
         }
 
         stage('Unit & Integration Tests') {
             steps {
                 echo '=== Stage 5: Executing Vitest test suite ==='
-                bat 'npm test'
+                script {
+                    if (isUnix()) {
+                        sh 'npm test'
+                    } else {
+                        bat 'npm test'
+                    }
+                }
             }
         }
 
         stage('Production Build') {
             steps {
                 echo '=== Stage 6: Compiling Next.js Turbopack production bundle ==='
-                bat 'npm run build'
+                script {
+                    if (isUnix()) {
+                        sh 'npm run build'
+                    } else {
+                        bat 'npm run build'
+                    }
+                }
             }
         }
 
@@ -70,7 +99,29 @@ pipeline {
             }
             steps {
                 echo '=== Stage 7: Dockerfile detected, verifying container build ==='
-                bat 'docker build -t mediflow:ci-${BUILD_NUMBER} .'
+                script {
+                    if (isUnix()) {
+                        sh 'docker build -t mediflow:ci-${BUILD_NUMBER} .'
+                    } else {
+                        bat 'docker build -t mediflow:ci-%BUILD_NUMBER% .'
+                    }
+                }
+            }
+        }
+
+        stage('Kubernetes Manifest Validation') {
+            when {
+                expression { return fileExists('k8s/kustomization.yaml') }
+            }
+            steps {
+                echo '=== Stage 8: k8s manifests detected, validating with Kustomize ==='
+                script {
+                    if (isUnix()) {
+                        sh 'kubectl kustomize k8s > /dev/null'
+                    } else {
+                        bat 'kubectl kustomize k8s > nul'
+                    }
+                }
             }
         }
     }

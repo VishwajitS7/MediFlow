@@ -10,15 +10,15 @@
 
 | Task ID | Role Name | Task Title | Dependencies | Status | PR Branch |
 |---|---|---|---|---|---|
-| **TASK-PO-01** | Product Owner / Team Lead | Repository Foundation, Architecture Baseline & Core Scaffold | None | **COMPLETE AFTER MERGE** | `main` / `develop` |
-| **TASK-GIT-01** | Git/GitHub Engineer | GitFlow Conventions, PR Guidelines & Branch Protection Docs | TASK-PO-01 | **READY FOR REVIEW** | `feature/TASK-GIT-01-gitflow-standards` |
-| **TASK-DEV1-01** | Developer 1 | Auth.js Setup, Role-Based Navigation & Session Shell | TASK-PO-01 | **READY FOR REVIEW** | `feature/TASK-DEV1-01-auth-navigation` |
-| **TASK-DEV2-01** | Developer 2 | Patient Registration, Search & Patient Profiles | TASK-PO-01 | **READY FOR REVIEW** | `feature/TASK-DEV2-01-patient-management` |
-| **TASK-DEV3-01** | Developer 3 | Appointment Scheduling, Consultations & Prescriptions | TASK-PO-01, TASK-DEV2-01 (API contract) | **READY FOR REVIEW** | `feature/TASK-DEV3-01-appointments-clinical` |
+| **TASK-PO-01** | Product Owner / Team Lead | Repository Foundation, Architecture Baseline & Core Scaffold | None | **MERGED** | `main` / `develop` |
+| **TASK-GIT-01** | Git/GitHub Engineer | GitFlow Conventions, PR Guidelines & Branch Protection Docs | TASK-PO-01 | **MERGED** | `develop` |
+| **TASK-DEV1-01** | Developer 1 | Auth.js Setup, Role-Based Navigation & Session Shell | TASK-PO-01 | **MERGED** | `develop` |
+| **TASK-DEV2-01** | Developer 2 | Patient Registration, Search & Patient Profiles | TASK-PO-01 | **MERGED** | `develop` |
+| **TASK-DEV3-01** | Developer 3 | Appointment Scheduling, Consultations & Prescriptions | TASK-PO-01, TASK-DEV2-01 (API contract) | **MERGED** | `develop` |
 | **TASK-QA-01** | QA Engineer | Test Strategy, Vitest Suite Scaffolding & E2E Test Suite | TASK-PO-01 | **READY TO START** | `feature/TASK-QA-01-test-suite` |
-| **TASK-CI-01** | Jenkins Engineer | Declarative Jenkinsfile Pipeline (Lint, Typecheck, Test, Build) | TASK-PO-01 | **READY TO START** | `feature/TASK-CI-01-jenkins-pipeline` |
-| **TASK-DOCKER-01** | Docker Engineer | Multi-Stage Dockerfile & Container Build Optimization | TASK-PO-01 | **READY TO START** | `feature/TASK-DOCKER-01-dockerfile` |
-| **TASK-K8S-01** | Kubernetes Engineer | Kubernetes Deployment, Service, ConfigMap & Probe Manifests | TASK-DOCKER-01 | **READY FOR REVIEW** | `feature/TASK-K8S-01-k8s-manifests` |
+| **TASK-CI-01** | Jenkins Engineer | Declarative Jenkinsfile Pipeline (Lint, Typecheck, Test, Build) | TASK-PO-01 | **IN PROGRESS** | `develop` |
+| **TASK-DOCKER-01** | Docker Engineer | Multi-Stage Dockerfile & Container Build Optimization | TASK-PO-01 | **MERGED** | `develop` (PR #8) |
+| **TASK-K8S-01** | Kubernetes Engineer | Kubernetes Deployment, Service, ConfigMap & Probe Manifests | TASK-DOCKER-01 | **MERGED** | `develop` (PR #9) |
 | **TASK-SRE-01** | DevOps/SRE Engineer | Observability, Health Endpoints, Telemetry & SRE Runbooks | TASK-PO-01 | **READY TO START** | `feature/TASK-SRE-01-health-observability` |
 
 ---
@@ -100,7 +100,7 @@
 - **Scope**: Author production-grade multi-stage `Dockerfile` using lightweight Alpine Node image, non-root user execution, `.dockerignore`, and standalone Next.js output optimization.
 - **Files Owned**: `Dockerfile`, `.dockerignore`, `docs/DOCKER_GUIDE.md`.
 - **Dependencies**: TASK-PO-01 merged into `develop`.
-- **Status**: BLOCKED (Awaiting TASK-PO-01)
+- **Status**: MERGED (PR #8)
 
 ---
 
@@ -109,7 +109,7 @@
 - **Scope**: Write Kubernetes manifests for Deployment (with resource limits and readiness/liveness probes), Service (ClusterIP/NodePort), ConfigMap, and Ingress routing.
 - **Files Owned**: `k8s/*`, `docs/K8S_DEPLOYMENT.md`.
 - **Dependencies**: TASK-DOCKER-01 container image specifications.
-- **Status**: BLOCKED (Awaiting TASK-DOCKER-01)
+- **Status**: MERGED (PR #9)
 
 ---
 
